@@ -42,11 +42,11 @@ const App = () => {
       <Suspense
         fallback={
           <div className="pt-3 text-center">
-            <CSpinner color="primary" variant="grow"/>
+            <CSpinner color="primary" variant="grow" />
           </div>
         }
       >
-        <ToastContainer/>
+        <ToastContainer />
         <Routes>
           <Route exact path="/login" name="Login Page" element={<Login/>}/>
           <Route exact path="/register" name="Register Page" element={<Register/>}/>
