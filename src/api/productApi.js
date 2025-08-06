@@ -50,3 +50,23 @@ export const createProduct = async (productData) => {
     throw error;
   }
 };
+
+export const getProductById = async (id) => {
+  const response = await fetch(`${API_BASE_URL}/products/${id}`)
+  if (!response.ok) {
+    throw new Error('Ошибка при получении товара')
+  }
+  return await response.json()
+}
+
+export const updateProduct = async (id, updatedData) => {
+  const response = await fetch(`${API_BASE_URL}/products/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updatedData),
+  })
+  if (!response.ok) {
+    throw new Error('Ошибка при обновлении товара')
+  }
+  return await response.json()
+}

@@ -13,10 +13,10 @@ import {
   CModalTitle,
   CRow,
   CSpinner,
-} from '@coreui/react';
+} from '@coreui/react'
 import {useNavigate} from 'react-router-dom'
 import {deleteProduct, getProducts} from 'src/api/productApi'
-import {toast} from "react-toastify";
+import {toast} from "react-toastify"
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -140,7 +140,7 @@ const ProductList = () => {
 
                         {product.characteristics && (
                           <>
-                            <hr/>
+                            <hr />
                             <h6 className="mb-2"><strong>Характеристики:</strong></h6>
                             <ul>
                               {Object.entries(product.characteristics).map(([key, value]) => (
@@ -164,9 +164,7 @@ const ProductList = () => {
         <CModalHeader>
           <CModalTitle>Подтвердите удаление</CModalTitle>
         </CModalHeader>
-        <CModalBody>
-          Вы уверены, что хотите удалить товар?
-        </CModalBody>
+        <CModalBody>Вы уверены, что хотите удалить товар?</CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={() => setConfirmModalVisible(false)}>
             Отмена
@@ -176,9 +174,7 @@ const ProductList = () => {
           </CButton>
         </CModalFooter>
       </CModal>
-
     </>
-
   );
 };
 
