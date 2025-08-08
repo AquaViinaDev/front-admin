@@ -58,6 +58,7 @@ const EditProductPage = React.lazy(() => import('./views/pages/products/ProductE
 const routes = [
   {path: '/', exact: true, name: 'Home'},
   {path: '/products', name: 'Products', element: ProductsPage},
+  {path: '/products/add', name: 'Create products', element: CreateProductPage},
   {path: '/products/:id/edit', name: 'Edit product', element: EditProductPage},
   // { path: '/dashboard', name: 'Dashboard', element: Dashboard },
   // { path: '/theme', name: 'Theme', element: Colors, exact: true },

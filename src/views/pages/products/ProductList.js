@@ -68,7 +68,7 @@ const ProductList = () => {
   const handleAddProduct = () => {
     navigate('/products/add');
   };
-
+  console.log(products)
   return (
     <>
       <CRow>
@@ -92,7 +92,7 @@ const ProductList = () => {
                       onClick={() => toggleCollapse(index)}
                     >
                       <div style={{fontWeight: '300'}}>
-                        {product.name} — {product.stockQty} шт. — {product.price} лей
+                        {product.name.ru} — {product.stockQty} шт. — {product.price} лей
                       </div>
                       <div>
                         <CButton
@@ -125,29 +125,32 @@ const ProductList = () => {
                           <div className="mb-3">
                             <img
                               src={product.image}
-                              alt={product.name}
+                              alt={product.name.ru}
                               style={{maxWidth: '200px', borderRadius: '8px'}}
                             />
                           </div>
                         )}
-                        <p><strong>Название:</strong> {product.name}</p>
-                        {product.brand && <p><strong>Бренд:</strong> {product.brand}</p>}
-                        <p><strong>Цена:</strong> {product.price} ₽</p>
+                        <p><strong>Тип:</strong> {product.type.ru}</p>
+                        <p><strong>Название:</strong> {product.name.ru}</p>
+                        {product.brand.ru && <p><strong>Бренд:</strong> {product.brand.ru}</p>}
+                        <p><strong>Цена:</strong> {product.price} лей</p>
                         <p><strong>В наличии:</strong> {product.inStock ? 'Да' : 'Нет'}</p>
                         <p><strong>Количество на складе:</strong> {product.stockQty}</p>
-                        <p><strong>Доставка:</strong> {product.deliveryAvailable ? 'Доступна' : 'Недоступна'}</p>
-                        <p><strong>Описание:</strong> {product.description || '—'}</p>
+                        <p><strong>Описание:</strong> {product.description.ru || '—'}</p>
 
                         {product.characteristics && (
                           <>
-                            <hr />
+                            <hr/>
                             <h6 className="mb-2"><strong>Характеристики:</strong></h6>
                             <ul>
-                              {Object.entries(product.characteristics).map(([key, value]) => (
-                                <li key={key}>
-                                  <strong>{key}:</strong> {value}
-                                </li>
-                              ))}
+                              {Object.entries(product.characteristics.ru)
+                                .filter(([key, value]) => value !== null)
+                                .map(([key, value]) => (
+                                  <li key={key}>
+                                    <strong>{key}:</strong> {value}
+                                  </li>
+                                ))
+                              }
                             </ul>
                           </>
                         )}

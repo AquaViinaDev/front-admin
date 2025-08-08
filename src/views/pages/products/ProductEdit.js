@@ -21,11 +21,29 @@ const ProductEdit = () => {
   const [product, setProduct] = useState(null)
   const [characteristics, setCharacteristics] = useState({})
 
+  const langs = ['ro', 'ru']
+  console.log(product)
+
   useEffect(() => {
     const fetchProduct = async () => {
       const data = await getProductById(id)
-      setProduct(data)
-      setCharacteristics(data.characteristics || {})
+
+      setProduct({
+        ...data,
+        name_ru: data.name?.ru || '',
+        name_ro: data.name?.ro || '',
+        description_ru: data.description?.ru || '',
+        description_ro: data.description?.ro || '',
+        brand_ru: data.brand?.ru || '',
+        brand_ro: data.brand?.ro || '',
+        type_ru: data.type?.ru || '',
+        type_ro: data.type?.ro || '',
+      })
+
+      setCharacteristics({
+        ru: data.characteristics?.ru || {},
+        ro: data.characteristics?.ro || {},
+      })
     }
 
     fetchProduct()
@@ -39,25 +57,56 @@ const ProductEdit = () => {
     }))
   }
 
-  const handleCharacteristicChange = (key, value) => {
-    setCharacteristics((prev) => ({
-      ...prev,
-      [key]: value,
-    }))
-  }
-
-  const addCharacteristic = () => {
-    setCharacteristics((prev) => ({
-      ...prev,
-      [`Характеристика ${Object.keys(prev).length + 1}`]: '',
-    }))
-  }
-
-  const removeCharacteristic = (keyToRemove) => {
+  const handleKeyChange = (oldKey, newKey, lang) => {
     const updated = { ...characteristics }
-    delete updated[keyToRemove]
+    const entries = updated[lang] || {}
+
+    const value = entries[oldKey]
+    delete entries[oldKey]
+    entries[newKey] = value
+
+    updated[lang] = entries
     setCharacteristics(updated)
   }
+
+  const handleValueChange = (key, value, lang) => {
+    const updated = { ...characteristics }
+    updated[lang] = {
+      ...updated[lang],
+      [key]: value,
+    }
+    setCharacteristics(updated)
+  }
+
+  const removeCharacteristic = (key) => {
+    const updated = { ...characteristics }
+    for (const lang of langs) {
+      if (updated[lang]) {
+        delete updated[lang][key]
+      }
+    }
+    setCharacteristics(updated)
+  }
+
+  // const handleCharacteristicChange = (key, value) => {
+  //   setCharacteristics((prev) => ({
+  //     ...prev,
+  //     [key]: value,
+  //   }))
+  // }
+
+  // const addCharacteristic = () => {
+  //   setCharacteristics((prev) => ({
+  //     ...prev,
+  //     [`Характеристика ${Object.keys(prev).length + 1}`]: '',
+  //   }))
+  // }
+
+  // const removeCharacteristic = (keyToRemove) => {
+  //   const updated = { ...characteristics }
+  //   delete updated[keyToRemove]
+  //   setCharacteristics(updated)
+  // }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -76,6 +125,11 @@ const ProductEdit = () => {
     }
   }
 
+  const allKeys = new Set([
+    ...Object.keys(characteristics?.ru || {}),
+    ...Object.keys(characteristics?.ro || {}),
+  ])
+
   if (!product) return <div>Загрузка...</div>
 
   return (
@@ -84,23 +138,58 @@ const ProductEdit = () => {
         <h4>Редактирование товара</h4>
         <CForm onSubmit={handleSubmit}>
           <CFormInput
-            label="Название"
-            name="name"
-            value={product.name}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormTextarea
-            label="Описание"
-            name="description"
-            value={product.description}
+            label="Тип (RU)"
+            name="name_ru"
+            value={product.type_ru}
             onChange={handleInputChange}
             className="mb-3"
           />
           <CFormInput
-            label="Бренд"
-            name="brand"
-            value={product.brand || ''}
+            label="Тип (RO)"
+            name="name_ro"
+            value={product.type_ro}
+            onChange={handleInputChange}
+            className="mb-3"
+          />
+          <CFormInput
+            label="Название (RU)"
+            name="name_ru"
+            value={product.name_ru}
+            onChange={handleInputChange}
+            className="mb-3"
+          />
+          <CFormInput
+            label="Название (RO)"
+            name="name_ro"
+            value={product.name_ro}
+            onChange={handleInputChange}
+            className="mb-3"
+          />
+          <CFormTextarea
+            label="Описание (RU)"
+            name="description_ru"
+            value={product.description_ru}
+            onChange={handleInputChange}
+            className="mb-3"
+          />
+          <CFormTextarea
+            label="Описание (RO)"
+            name="description_ro"
+            value={product.description_ro}
+            onChange={handleInputChange}
+            className="mb-3"
+          />
+          <CFormInput
+            label="Бренд (RU)"
+            name="brand_ru"
+            value={product.brand_ru}
+            onChange={handleInputChange}
+            className="mb-3"
+          />
+          <CFormInput
+            label="Бренд (RO)"
+            name="brand_ro"
+            value={product.brand_ro}
             onChange={handleInputChange}
             className="mb-3"
           />
@@ -133,47 +222,42 @@ const ProductEdit = () => {
             onChange={handleInputChange}
             className="mb-3"
           />
-          <CFormCheck
-            label="Доставка доступна"
-            name="deliveryAvailable"
-            checked={product.deliveryAvailable}
-            onChange={handleInputChange}
-            className="mb-4"
-          />
-
           <h5>Характеристики</h5>
-          {Object.entries(characteristics).map(([key, value], index) => (
-            <CRow className="mb-2" key={index}>
-              <CCol>
-                <CFormInput
-                  value={key}
-                  onChange={(e) => {
-                    const newKey = e.target.value
-                    const newChar = { ...characteristics }
-                    const val = newChar[key]
-                    delete newChar[key]
-                    newChar[newKey] = val
-                    setCharacteristics(newChar)
-                  }}
-                />
-              </CCol>
-              <CCol>
-                <CFormInput
-                  value={value}
-                  onChange={(e) => handleCharacteristicChange(key, e.target.value)}
-                />
-              </CCol>
-              <CCol xs="auto">
-                <CButton size="sm" color="danger" onClick={() => removeCharacteristic(key)}>
-                  🗑️
-                </CButton>
-              </CCol>
-            </CRow>
+          {[...allKeys].map((key, index) => (
+            <div key={index} className="mb-3">
+              <CRow className="mb-2">
+                <CCol xs={12}>
+                  <strong>Ключ характеристики:</strong>
+                  <CFormInput
+                    className="mt-1"
+                    value={key}
+                    readOnly={true}
+                  />
+                </CCol>
+              </CRow>
+
+              <CRow>
+                {langs.map((lang) => (
+                  <CCol md={6} key={lang}>
+                    <label>
+                      Значение ({lang.toUpperCase()}):
+                      <CFormInput
+                        className="mt-1"
+                        value={characteristics?.[lang]?.[key] || ''}
+                        onChange={(e) => handleValueChange(key, e.target.value, lang)}
+                      />
+                    </label>
+                  </CCol>
+                ))}
+              </CRow>
+
+              <hr />
+            </div>
           ))}
 
-          <CButton color="secondary" onClick={addCharacteristic} className="mb-4">
-            ➕ Добавить характеристику
-          </CButton>
+          {/*<CButton color="secondary" onClick={addCharacteristic} className="mb-4">*/}
+          {/*  ➕ Добавить характеристику*/}
+          {/*</CButton>*/}
 
           <div>
             <CButton type="submit" color="primary">
