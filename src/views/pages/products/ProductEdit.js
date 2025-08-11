@@ -12,7 +12,24 @@ import {
   CCol,
 } from '@coreui/react'
 import { getProductById, updateProduct } from 'src/api/productApi'
-import {toast} from "react-toastify";
+import { toast } from 'react-toastify';
+import { EDIT_CHARACTERISTICS_BY_TYPE } from './types';
+
+const CHAR_KEYS_MAP = {
+  "Тип фильтрации": "Tip filtrare",
+  "Размер": "Dimensiune",
+  "Пористость": "Porozitate",
+  "Материал": "Material",
+  "Применение": "Aplicare",
+  "Объем кувшина": "Volum carafă",
+  "Ресурс фильтра": "Durată filtru",
+  "Мин. давление": "Presiune minimă",
+  "Макс. давление": "Presiune maximă",
+  "Температура воды": "Temperatura apei",
+  "Кол-во ступеней очистки": "Număr de etape de filtrare",
+  "Скорость фильтрации": "Viteză de filtrare",
+  "Тип подключения": "Tip de conectare",
+};
 
 const ProductEdit = () => {
   const { id } = useParams()
@@ -22,7 +39,6 @@ const ProductEdit = () => {
   const [characteristics, setCharacteristics] = useState({})
 
   const langs = ['ro', 'ru']
-  console.log(product)
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -57,18 +73,6 @@ const ProductEdit = () => {
     }))
   }
 
-  const handleKeyChange = (oldKey, newKey, lang) => {
-    const updated = { ...characteristics }
-    const entries = updated[lang] || {}
-
-    const value = entries[oldKey]
-    delete entries[oldKey]
-    entries[newKey] = value
-
-    updated[lang] = entries
-    setCharacteristics(updated)
-  }
-
   const handleValueChange = (key, value, lang) => {
     const updated = { ...characteristics }
     updated[lang] = {
@@ -78,58 +82,49 @@ const ProductEdit = () => {
     setCharacteristics(updated)
   }
 
-  const removeCharacteristic = (key) => {
-    const updated = { ...characteristics }
-    for (const lang of langs) {
-      if (updated[lang]) {
-        delete updated[lang][key]
-      }
-    }
-    setCharacteristics(updated)
-  }
-
-  // const handleCharacteristicChange = (key, value) => {
-  //   setCharacteristics((prev) => ({
-  //     ...prev,
-  //     [key]: value,
-  //   }))
-  // }
-
-  // const addCharacteristic = () => {
-  //   setCharacteristics((prev) => ({
-  //     ...prev,
-  //     [`Характеристика ${Object.keys(prev).length + 1}`]: '',
-  //   }))
-  // }
-
-  // const removeCharacteristic = (keyToRemove) => {
-  //   const updated = { ...characteristics }
-  //   delete updated[keyToRemove]
-  //   setCharacteristics(updated)
-  // }
-
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
+
     const updatedProduct = {
-      ...product,
+      name: {
+        ru: product.name_ru,
+        ro: product.name_ro,
+      },
+      brand: {
+        ru: product.brand_ru,
+        ro: product.brand_ro,
+      },
+      description: {
+        ru: product.description_ru,
+        ro: product.description_ro,
+      },
+      image: product.image,
+      price: product.price,
+      inStock: product.inStock,
+      stockQty: product.stockQty,
+      type: {
+        ru: product.type_ru,
+        ro: product.type_ro,
+      },
       characteristics,
-    }
+      categorieIds: product.categorieIds || [],
+    };
 
     try {
-      await updateProduct(id, updatedProduct)
+      await updateProduct(id, updatedProduct);
       toast.success('Товар успешно обновлён!');
-      navigate('/products')
+      navigate('/products');
     } catch (err) {
-      console.error(err)
+      console.error(err);
       toast.error('Ошибка при обновлении товара!');
     }
-  }
+  };
 
-  const allKeys = new Set([
-    ...Object.keys(characteristics?.ru || {}),
-    ...Object.keys(characteristics?.ro || {}),
-  ])
-
+  const allowedKeys =
+    EDIT_CHARACTERISTICS_BY_TYPE[product?.type_ru] ||
+    EDIT_CHARACTERISTICS_BY_TYPE[product?.type_ro] ||
+    [];
+  console.log(characteristics)
   if (!product) return <div>Загрузка...</div>
 
   return (
@@ -223,15 +218,15 @@ const ProductEdit = () => {
             className="mb-3"
           />
           <h5>Характеристики</h5>
-          {[...allKeys].map((key, index) => (
-            <div key={index} className="mb-3">
+          {allowedKeys.map((key) => (
+            <div key={key} className="mb-3">
               <CRow className="mb-2">
                 <CCol xs={12}>
                   <strong>Ключ характеристики:</strong>
                   <CFormInput
                     className="mt-1"
                     value={key}
-                    readOnly={true}
+                    readOnly
                   />
                 </CCol>
               </CRow>
@@ -243,22 +238,28 @@ const ProductEdit = () => {
                       Значение ({lang.toUpperCase()}):
                       <CFormInput
                         className="mt-1"
-                        value={characteristics?.[lang]?.[key] || ''}
-                        onChange={(e) => handleValueChange(key, e.target.value, lang)}
+                        value={
+                          lang === "ru"
+                            ? characteristics?.[lang]?.[key] || ""
+                            : characteristics?.[lang]?.[CHAR_KEYS_MAP[key]] || ""
+                        }
+                        onChange={(e) =>
+                          handleValueChange(
+                            lang === "ru" ? key : CHAR_KEYS_MAP[key],
+                            e.target.value,
+                            lang
+                          )
+                        }
                       />
                     </label>
                   </CCol>
                 ))}
               </CRow>
 
+
               <hr />
             </div>
           ))}
-
-          {/*<CButton color="secondary" onClick={addCharacteristic} className="mb-4">*/}
-          {/*  ➕ Добавить характеристику*/}
-          {/*</CButton>*/}
-
           <div>
             <CButton type="submit" color="primary">
               💾 Сохранить изменения
