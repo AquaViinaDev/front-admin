@@ -7,7 +7,6 @@ import {
   CCol,
   CForm,
   CFormInput,
-  CFormSwitch,
   CFormTextarea,
   CFormSelect,
   CRow,
@@ -24,9 +23,8 @@ const ProductAdd = () => {
     name: { ru: '', ro: '' },
     brand: { ru: '', ro: '' },
     description: { ru: '', ro: '' },
-    image: '',
+    images: [],
     price: '',
-    inStock: true,
     stockQty: 0,
     type: { ru: '', ro: '' },
     characteristics: { ru: {}, ro: {} },
@@ -89,17 +87,42 @@ const ProductAdd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
-        ...product,
-        price: parseFloat(product.price),
-      };
-      await createProduct(payload);
+      const formData = new FormData();
+
+      // строки
+      formData.append('name', product.name);
+      formData.append('brand', product.brand);
+      formData.append('description', product.description);
+      formData.append('type', product.type);
+
+      // массивы/объекты
+      formData.append('characteristics', JSON.stringify(product.characteristics));
+      formData.append('categorieIds', JSON.stringify(product.categorieIds));
+
+      // числа
+      formData.append('price', String(product.price));
+      formData.append('stockQty', String(product.stockQty));
+
+      // картинки
+      product.images.forEach((file) => {
+        formData.append('images', file);
+      });
+
+      await createProduct(formData);
       toast.success('Товар успешно добавлен!');
       navigate('/products');
     } catch (err) {
       console.error('Ошибка при добавлении товара:', err);
       toast.error('Ошибка при добавлении');
     }
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setProduct((prev) => ({
+      ...prev,
+      images: files,
+    }));
   };
 
   return (
@@ -149,11 +172,11 @@ const ProductAdd = () => {
                 className="mb-3"
               />
               <CFormInput
-                type="text"
+                type="file"
+                multiple
                 name="image"
                 label="Ссылка на изображение"
-                value={product.image}
-                onChange={handleChange}
+                onChange={handleFileChange}
                 className="mb-3"
               />
               <CFormInput
@@ -170,13 +193,6 @@ const ProductAdd = () => {
                 name="stockQty"
                 label="Количество на складе"
                 value={product.stockQty}
-                onChange={handleChange}
-                className="mb-3"
-              />
-              <CFormSwitch
-                label="В наличии"
-                name="inStock"
-                checked={product.inStock}
                 onChange={handleChange}
                 className="mb-3"
               />

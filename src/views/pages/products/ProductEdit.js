@@ -100,7 +100,6 @@ const ProductEdit = () => {
       },
       image: product.image,
       price: product.price,
-      inStock: product.inStock,
       stockQty: product.stockQty,
       type: {
         ru: product.type_ru,

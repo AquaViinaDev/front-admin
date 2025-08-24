@@ -126,7 +126,7 @@ const ProductList = () => {
                             <img
                               src={product.image}
                               alt={product.name.ru}
-                              style={{maxWidth: '200px', borderRadius: '8px'}}
+                              style={{ maxWidth: '200px', borderRadius: '8px' }}
                             />
                           </div>
                         )}
@@ -134,7 +134,7 @@ const ProductList = () => {
                         <p><strong>Название:</strong> {product.name.ru}</p>
                         {product.brand.ru && <p><strong>Бренд:</strong> {product.brand.ru}</p>}
                         <p><strong>Цена:</strong> {product.price} лей</p>
-                        <p><strong>В наличии:</strong> {product.inStock ? 'Да' : 'Нет'}</p>
+                        {/*<p><strong>В наличии:</strong> {product.stockQty >= 1 ? 'Да' : 'Нет'}</p>*/}
                         <p><strong>Количество на складе:</strong> {product.stockQty}</p>
                         <p><strong>Описание:</strong> {product.description.ru || '—'}</p>
 

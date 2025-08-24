@@ -30,18 +30,16 @@ export const deleteProduct = async (id) => {
   }
 };
 
-export const createProduct = async (productData) => {
+export const createProduct = async (formData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/products`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(productData),
+      body: formData, // тут без headers
     });
 
     if (!response.ok) {
-      throw new Error('Ошибка при создании товара');
+      const errText = await response.text();
+      throw new Error(`Ошибка при создании товара: ${errText}`);
     }
 
     return await response.json();
