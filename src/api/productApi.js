@@ -34,8 +34,9 @@ export const createProduct = async (formData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/products`, {
       method: 'POST',
-      body: formData, // тут без headers
+      body: formData,
     });
+    console.log(response)
 
     if (!response.ok) {
       const errText = await response.text();
@@ -57,14 +58,17 @@ export const getProductById = async (id) => {
   return await response.json()
 }
 
-export const updateProduct = async (id, updatedData) => {
+export const updateProduct = async (id, data, isFormData = false) => {
   const response = await fetch(`${API_BASE_URL}/products/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updatedData),
-  })
+    body: isFormData ? data : JSON.stringify(data),
+    headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+  });
+
   if (!response.ok) {
     throw new Error('Ошибка при обновлении товара')
   }
-  return await response.json()
-}
+
+  return await response.json();
+};
+

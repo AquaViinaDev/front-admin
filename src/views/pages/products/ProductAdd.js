@@ -67,6 +67,10 @@ const ProductAdd = () => {
   const handleTypeSelect = (e) => {
     const typeRu = e.target.value;
     setSelectedType(typeRu);
+
+    const ruKeys = CHARACTERISTICS_BY_TYPE[typeRu].ru;
+    const roKeys = CHARACTERISTICS_BY_TYPE[typeRu].ro;
+
     setProduct((prev) => ({
       ...prev,
       type: {
@@ -74,12 +78,8 @@ const ProductAdd = () => {
         ro: '',
       },
       characteristics: {
-        ru: Object.fromEntries(
-          CHARACTERISTICS_BY_TYPE[typeRu].map((char) => [char, null])
-        ),
-        ro: Object.fromEntries(
-          CHARACTERISTICS_BY_TYPE[typeRu].map(() => [ '', null ])
-        ),
+        ru: Object.fromEntries(ruKeys.map((char) => [char, null])),
+        ro: Object.fromEntries(roKeys.map((char) => [char, null])),
       },
     }));
   };
@@ -90,10 +90,10 @@ const ProductAdd = () => {
       const formData = new FormData();
 
       // строки
-      formData.append('name', product.name);
-      formData.append('brand', product.brand);
-      formData.append('description', product.description);
-      formData.append('type', product.type);
+      formData.append('name', JSON.stringify(product.name));
+      formData.append('brand', JSON.stringify(product.brand));
+      formData.append('description', JSON.stringify(product.description));
+      formData.append('type', JSON.stringify(product.type));
 
       // массивы/объекты
       formData.append('characteristics', JSON.stringify(product.characteristics));
@@ -216,24 +216,27 @@ const ProductAdd = () => {
                     className="mb-3"
                   />
                   <h6 className="mt-4">Характеристики</h6>
-                  {CHARACTERISTICS_BY_TYPE[selectedType].map((charKey, index) => (
-                    <CRow key={index} className="mb-2">
-                      <CCol md={6}>
-                        <CFormInput
-                          label={`${charKey} (ru)`}
-                          value={product.characteristics.ru[charKey] ?? ''}
-                          onChange={(e) => handleCharacteristicChange('ru', charKey, e.target.value)}
-                        />
-                      </CCol>
-                      <CCol md={6}>
-                        <CFormInput
-                          label={`${charKey} (ro)`}
-                          value={product.characteristics.ro[charKey] ?? ''}
-                          onChange={(e) => handleCharacteristicChange('ro', charKey, e.target.value)}
-                        />
-                      </CCol>
-                    </CRow>
-                  ))}
+                  {CHARACTERISTICS_BY_TYPE[selectedType].ru.map((ruKey, index) => {
+                    const roKey = CHARACTERISTICS_BY_TYPE[selectedType].ro[index];
+                    return (
+                      <CRow key={index} className="mb-2">
+                        <CCol md={6}>
+                          <CFormInput
+                            label={`${ruKey} (ru)`}
+                            value={product.characteristics.ru[ruKey] ?? ''}
+                            onChange={(e) => handleCharacteristicChange('ru', ruKey, e.target.value)}
+                          />
+                        </CCol>
+                        <CCol md={6}>
+                          <CFormInput
+                            label={`${roKey} (ro)`}
+                            value={product.characteristics.ro[roKey] ?? ''}
+                            onChange={(e) => handleCharacteristicChange('ro', roKey, e.target.value)}
+                          />
+                        </CCol>
+                      </CRow>
+                    );
+                  })}
                 </>
               )}
               <div className="mt-4">

@@ -85,39 +85,49 @@ const ProductEdit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const updatedProduct = {
-      name: {
-        ru: product.name_ru,
-        ro: product.name_ro,
-      },
-      brand: {
-        ru: product.brand_ru,
-        ro: product.brand_ro,
-      },
-      description: {
-        ru: product.description_ru,
-        ro: product.description_ro,
-      },
-      image: product.image,
-      price: product.price,
-      stockQty: product.stockQty,
-      type: {
-        ru: product.type_ru,
-        ro: product.type_ro,
-      },
-      characteristics,
-      categorieIds: product.categorieIds || [],
-    };
+    const formData = new FormData();
+
+    formData.append("name", JSON.stringify({
+      ru: product.name_ru,
+      ro: product.name_ro,
+    }));
+    formData.append("brand", JSON.stringify({
+      ru: product.brand_ru,
+      ro: product.brand_ro,
+    }));
+    formData.append("description", JSON.stringify({
+      ru: product.description_ru,
+      ro: product.description_ro,
+    }));
+    formData.append("type", JSON.stringify({
+      ru: product.type_ru,
+      ro: product.type_ro,
+    }));
+    formData.append("characteristics", JSON.stringify(characteristics));
+    formData.append("price", product.price);
+    formData.append("stockQty", product.stockQty);
+    formData.append("categorieIds", JSON.stringify(product.categorieIds || []));
+
+    // старые изображения
+    formData.append("images", JSON.stringify(product.images || []));
+
+    // новые изображения (если выбрал)
+    if (product.newImages?.length) {
+      product.newImages.forEach((file) => {
+        formData.append("images", file);
+      });
+    }
 
     try {
-      await updateProduct(id, updatedProduct);
-      toast.success('Товар успешно обновлён!');
-      navigate('/products');
+      await updateProduct(id, formData, true);
+      toast.success("Товар успешно обновлён!");
+      navigate("/products");
     } catch (err) {
       console.error(err);
-      toast.error('Ошибка при обновлении товара!');
+      toast.error("Ошибка при обновлении товара!");
     }
   };
+
 
   const allowedKeys =
     EDIT_CHARACTERISTICS_BY_TYPE[product?.type_ru] ||
@@ -188,12 +198,38 @@ const ProductEdit = () => {
             className="mb-3"
           />
           <CFormInput
-            label="Изображение (URL или путь)"
-            name="image"
-            value={product.image}
-            onChange={handleInputChange}
+            label="Изображения"
+            type="file"
+            name="images"
+            onChange={(e) => {
+              const files = Array.from(e.target.files)
+              setProduct((prev) => ({
+                ...prev,
+                newImages: files,
+              }))
+            }}
             className="mb-3"
           />
+          <div className="mt-3">
+            {product.images?.map((img, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
+                <img src={`http://localhost:3000${img}`} alt="preview" width={80} />
+                <CButton
+                  color="danger"
+                  size="sm"
+                  className="ms-2"
+                  onClick={() => {
+                    setProduct((prev) => ({
+                      ...prev,
+                      images: prev.images.filter((_, i) => i !== idx),
+                    }));
+                  }}
+                >
+                  ❌
+                </CButton>
+              </div>
+            ))}
+          </div>
           <CFormInput
             label="Цена"
             name="price"
@@ -256,7 +292,7 @@ const ProductEdit = () => {
               </CRow>
 
 
-              <hr />
+              <hr/>
             </div>
           ))}
           <div>
