@@ -128,7 +128,6 @@ const ProductEdit = () => {
     }
   };
 
-
   const allowedKeys =
     EDIT_CHARACTERISTICS_BY_TYPE[product?.type_ru] ||
     EDIT_CHARACTERISTICS_BY_TYPE[product?.type_ro] ||
