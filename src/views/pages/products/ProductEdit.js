@@ -13,7 +13,7 @@ import {
 } from '@coreui/react'
 import { getProductById, updateProduct } from 'src/api/productApi'
 import { toast } from 'react-toastify';
-import { EDIT_CHARACTERISTICS_BY_TYPE } from './types';
+import { CHARACTERISTICS_BY_TYPE } from './types';
 
 const CHAR_KEYS_MAP = {
   "Тип фильтрации": "Tip filtrare",
@@ -37,8 +37,6 @@ const ProductEdit = () => {
 
   const [product, setProduct] = useState(null)
   const [characteristics, setCharacteristics] = useState({})
-
-  const langs = ['ro', 'ru']
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -105,7 +103,8 @@ const ProductEdit = () => {
     }));
     formData.append("characteristics", JSON.stringify(characteristics));
     formData.append("price", product.price);
-    formData.append("stockQty", product.stockQty);
+    formData.append("oldPrice", product.oldPrice);
+    formData.append("inStock", product.inStock);
     formData.append("categorieIds", JSON.stringify(product.categorieIds || []));
 
     // старые изображения
@@ -128,10 +127,6 @@ const ProductEdit = () => {
     }
   };
 
-  const allowedKeys =
-    EDIT_CHARACTERISTICS_BY_TYPE[product?.type_ru] ||
-    EDIT_CHARACTERISTICS_BY_TYPE[product?.type_ro] ||
-    [];
   console.log(characteristics)
   if (!product) return <div>Загрузка...</div>
 
@@ -237,10 +232,10 @@ const ProductEdit = () => {
             className="mb-3"
           />
           <CFormInput
-            label="Количество на складе"
-            name="stockQty"
             type="number"
-            value={product.stockQty}
+            name="oldPrice"
+            label="Старая цена"
+            value={product.oldPrice}
             onChange={handleInputChange}
             className="mb-3"
           />
@@ -251,49 +246,29 @@ const ProductEdit = () => {
             onChange={handleInputChange}
             className="mb-3"
           />
-          <h5>Характеристики</h5>
-          {allowedKeys.map((key) => (
-            <div key={key} className="mb-3">
-              <CRow className="mb-2">
-                <CCol xs={12}>
-                  <strong>Ключ характеристики:</strong>
+          <h5 className="mt-4">Характеристики</h5>
+          {CHARACTERISTICS_BY_TYPE.ru.map((ruKey, index) => {
+            const roKey = CHARACTERISTICS_BY_TYPE.ro[index];
+            return (
+              <CRow key={index} className="mb-2">
+                <CCol md={6}>
                   <CFormInput
-                    className="mt-1"
-                    value={key}
-                    readOnly
+                    label={`${ruKey} (ru)`}
+                    value={characteristics.ru?.[ruKey] ?? ""}
+                    onChange={(e) => handleValueChange(ruKey, e.target.value, "ru")}
+                  />
+                </CCol>
+                <CCol md={6}>
+                  <CFormInput
+                    label={`${roKey} (ro)`}
+                    value={characteristics.ro?.[roKey] ?? ""}
+                    onChange={(e) => handleValueChange(roKey, e.target.value, "ro")}
                   />
                 </CCol>
               </CRow>
+            );
+          })}
 
-              <CRow>
-                {langs.map((lang) => (
-                  <CCol md={6} key={lang}>
-                    <label>
-                      Значение ({lang.toUpperCase()}):
-                      <CFormInput
-                        className="mt-1"
-                        value={
-                          lang === "ru"
-                            ? characteristics?.[lang]?.[key] || ""
-                            : characteristics?.[lang]?.[CHAR_KEYS_MAP[key]] || ""
-                        }
-                        onChange={(e) =>
-                          handleValueChange(
-                            lang === "ru" ? key : CHAR_KEYS_MAP[key],
-                            e.target.value,
-                            lang
-                          )
-                        }
-                      />
-                    </label>
-                  </CCol>
-                ))}
-              </CRow>
-
-
-              <hr/>
-            </div>
-          ))}
           <div>
             <CButton type="submit" color="primary">
               💾 Сохранить изменения

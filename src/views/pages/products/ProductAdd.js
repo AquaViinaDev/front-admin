@@ -189,7 +189,6 @@ const ProductAdd = () => {
                 onChange={handleChange}
                 className="mb-3"
               />
-
               {/* Наличие */}
               <CFormCheck
                 type="checkbox"
