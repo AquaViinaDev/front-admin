@@ -15,6 +15,8 @@ import { getProductById, updateProduct } from 'src/api/productApi'
 import { toast } from 'react-toastify';
 import { CHARACTERISTICS_BY_TYPE } from './types';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
 const CHAR_KEYS_MAP = {
   "Тип фильтрации": "Tip filtrare",
   "Размер": "Dimensiune",
@@ -205,9 +207,9 @@ const ProductEdit = () => {
             className="mb-3"
           />
           <div className="mt-3">
-            {product.images?.map((img, idx) => (
+            {product?.images?.map((img, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
-                <img src={`http://157.90.240.22:3000${img}`} alt="preview" width={80} />
+                <img src={`${API_BASE_URL}${img}`} alt="preview" width={80} />
                 <CButton
                   color="danger"
                   size="sm"

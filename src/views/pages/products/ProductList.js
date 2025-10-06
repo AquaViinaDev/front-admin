@@ -31,7 +31,7 @@ const ProductList = () => {
     const fetchData = async () => {
       try {
         const data = await getProducts();
-        setProducts(data);
+        setProducts(data?.items);
       } catch (error) {
         console.error('Ошибка при загрузке данных:', error);
       } finally {
@@ -68,7 +68,7 @@ const ProductList = () => {
   const handleAddProduct = () => {
     navigate('/products/add');
   };
-  console.log(products)
+
   return (
     <>
       <CRow>
@@ -84,7 +84,7 @@ const ProductList = () => {
               {loading ? (
                 <CSpinner color="primary"/>
               ) : (
-                products.map((product, index) => (
+                products?.map((product, index) => (
                   <CCard key={product.id} className="mb-3">
                     <CCardHeader
                       className="d-flex justify-content-between align-items-center"
@@ -134,8 +134,7 @@ const ProductList = () => {
                         <p><strong>Название:</strong> {product.name.ru}</p>
                         {product.brand.ru && <p><strong>Бренд:</strong> {product.brand.ru}</p>}
                         <p><strong>Цена:</strong> {product.price} лей</p>
-                        {/*<p><strong>В наличии:</strong> {product.stockQty >= 1 ? 'Да' : 'Нет'}</p>*/}
-                        <p><strong>Количество на складе:</strong> {product.stockQty}</p>
+                        <p><strong>Наличие на складе:</strong> {product.inStock ? "есть" : "нет"}</p>
                         <p><strong>Описание:</strong> {product.description.ru || '—'}</p>
 
                         {product.characteristics && (
