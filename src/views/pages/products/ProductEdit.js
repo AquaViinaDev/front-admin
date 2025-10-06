@@ -207,7 +207,7 @@ const ProductEdit = () => {
           <div className="mt-3">
             {product.images?.map((img, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
-                <img src={`http://localhost:3000${img}`} alt="preview" width={80} />
+                <img src={`http://157.90.240.22:3000${img}`} alt="preview" width={80} />
                 <CButton
                   color="danger"
                   size="sm"

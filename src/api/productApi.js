@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://157.90.240.22:3000';
 
 export const getProducts = async () => {
   try {
