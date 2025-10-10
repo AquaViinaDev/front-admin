@@ -82,7 +82,7 @@ const ProductList = () => {
             </CCardHeader>
             <CCardBody>
               {loading ? (
-                <CSpinner color="primary"/>
+                <CSpinner color="primary" />
               ) : (
                 products?.map((product, index) => (
                   <CCard key={product.id} className="mb-3">
@@ -92,7 +92,7 @@ const ProductList = () => {
                       onClick={() => toggleCollapse(index)}
                     >
                       <div style={{fontWeight: '300'}}>
-                        {product.name.ru} — {product.stockQty} шт. — {product.price} лей
+                        {product.name.ru} — {product.price} лей
                       </div>
                       <div>
                         <CButton

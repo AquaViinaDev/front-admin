@@ -17,22 +17,6 @@ import { CHARACTERISTICS_BY_TYPE } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
-const CHAR_KEYS_MAP = {
-  "Тип фильтрации": "Tip filtrare",
-  "Размер": "Dimensiune",
-  "Пористость": "Porozitate",
-  "Материал": "Material",
-  "Применение": "Aplicare",
-  "Объем кувшина": "Volum carafă",
-  "Ресурс фильтра": "Durată filtru",
-  "Мин. давление": "Presiune minimă",
-  "Макс. давление": "Presiune maximă",
-  "Температура воды": "Temperatura apei",
-  "Кол-во ступеней очистки": "Număr de etape de filtrare",
-  "Скорость фильтрации": "Viteză de filtrare",
-  "Тип подключения": "Tip de conectare",
-};
-
 const ProductEdit = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -129,7 +113,6 @@ const ProductEdit = () => {
     }
   };
 
-  console.log(characteristics)
   if (!product) return <div>Загрузка...</div>
 
   return (
@@ -139,14 +122,14 @@ const ProductEdit = () => {
         <CForm onSubmit={handleSubmit}>
           <CFormInput
             label="Тип (RU)"
-            name="name_ru"
+            name="type_ru"
             value={product.type_ru}
             onChange={handleInputChange}
             className="mb-3"
           />
           <CFormInput
             label="Тип (RO)"
-            name="name_ro"
+            name="type_ro"
             value={product.type_ro}
             onChange={handleInputChange}
             className="mb-3"
