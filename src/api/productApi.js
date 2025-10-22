@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+import { API_BASE_URL } from 'src/config/api'
 
 export const getProducts = async () => {
   try {
@@ -71,4 +71,3 @@ export const updateProduct = async (id, data, isFormData = false) => {
 
   return await response.json();
 };
-

@@ -14,8 +14,7 @@ import {
 import { getProductById, updateProduct } from 'src/api/productApi'
 import { toast } from 'react-toastify';
 import { CHARACTERISTICS_BY_TYPE } from './types';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+import { API_BASE_URL } from 'src/config/api';
 
 const ProductEdit = () => {
   const { id } = useParams()

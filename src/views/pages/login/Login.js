@@ -16,7 +16,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+import { API_BASE_URL } from 'src/config/api'
 
 const Login = () => {
   const navigate = useNavigate()
