@@ -97,6 +97,17 @@ const ProductList = () => {
                       <div>
                         <CButton
                           size="sm"
+                          color="secondary"
+                          className="me-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/products/add", { state: { copiedProductId: product.id } });
+                          }}
+                        >
+                          📋
+                        </CButton>
+                        <CButton
+                          size="sm"
                           color="info"
                           onClick={(e) => {
                             e.stopPropagation();
