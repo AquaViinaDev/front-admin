@@ -17,117 +17,11 @@ import { createProduct, getProductById } from "src/api/productApi";
 import { toast } from "react-toastify";
 import { CHARACTERISTICS_BY_TYPE } from "./types";
 import { API_BASE_URL } from "src/config/api";
-
-const createEmptyCharacteristics = () => ({
-  ru: Object.fromEntries(CHARACTERISTICS_BY_TYPE.ru.map((char) => [char, ""])),
-  ro: Object.fromEntries(CHARACTERISTICS_BY_TYPE.ro.map((char) => [char, ""])),
-});
-
-const parseMaybeObject = (value, fallback) => {
-  if (value === null || value === undefined) return fallback;
-  if (typeof value === "string") {
-    try {
-      return JSON.parse(value);
-    } catch {
-      return fallback;
-    }
-  }
-  if (typeof value === "object") {
-    return value;
-  }
-  return fallback;
-};
-
-const normalizeCharacteristics = (source) => {
-  const base = createEmptyCharacteristics();
-  const parsed = parseMaybeObject(source, null);
-
-  if (!parsed) {
-    return base;
-  }
-
-  const normalizeLang = (lang) =>
-    Object.fromEntries(
-      Object.entries({
-        ...base[lang],
-        ...(parsed[lang] || {}),
-      }).map(([key, value]) => [key, value ?? ""])
-    );
-
-  return {
-    ru: normalizeLang("ru"),
-    ro: normalizeLang("ro"),
-  };
-};
-
-const buildInitialProductState = (copiedProduct) => {
-  const empty = {
-    name: { ru: "", ro: "" },
-    brand: { ru: "", ro: "" },
-    description: { ru: "", ro: "" },
-    images: [],
-    price: "",
-    oldPrice: "",
-    inStock: true,
-    type: { ru: "", ro: "" },
-    characteristics: createEmptyCharacteristics(),
-    categorieIds: [],
-  };
-
-  if (!copiedProduct) {
-    return empty;
-  }
-
-  const name = parseMaybeObject(copiedProduct.name, empty.name) ?? empty.name;
-  const brand = parseMaybeObject(copiedProduct.brand, empty.brand) ?? empty.brand;
-  const description =
-    parseMaybeObject(copiedProduct.description, empty.description) ?? empty.description;
-  const type = parseMaybeObject(copiedProduct.type, empty.type) ?? empty.type;
-  const categorieIdsRaw = parseMaybeObject(
-    copiedProduct.categorieIds,
-    copiedProduct.categorieIds
-  );
-  const categorieIds = Array.isArray(categorieIdsRaw) ? [...categorieIdsRaw] : [];
-
-  const price =
-    copiedProduct.price !== undefined && copiedProduct.price !== null
-      ? String(copiedProduct.price)
-      : "";
-  const oldPrice =
-    copiedProduct.oldPrice !== undefined && copiedProduct.oldPrice !== null
-      ? String(copiedProduct.oldPrice)
-      : "";
-
-  const inStock =
-    typeof copiedProduct.inStock === "string"
-      ? copiedProduct.inStock === "true"
-      : copiedProduct.inStock ?? true;
-
-  return {
-    ...empty,
-    name: {
-      ru: name?.ru ?? "",
-      ro: name?.ro ?? "",
-    },
-    brand: {
-      ru: brand?.ru ?? "",
-      ro: brand?.ro ?? "",
-    },
-    description: {
-      ru: description?.ru ?? "",
-      ro: description?.ro ?? "",
-    },
-    price,
-    oldPrice,
-    inStock,
-    type: {
-      ru: type?.ru ?? "",
-      ro: type?.ro ?? "",
-    },
-    characteristics: normalizeCharacteristics(copiedProduct.characteristics),
-    categorieIds,
-  };
-};
+import {
+  buildInitialProductState,
+  buildProductFormData,
+  sanitizeImageList,
+} from "./productFormUtils";
 
 const resolveImageUrl = (path) => {
   if (!path || typeof path !== "string") return null;
@@ -138,17 +32,6 @@ const resolveImageUrl = (path) => {
     return `${API_BASE_URL}${path}`;
   }
   return `${API_BASE_URL}/${path}`;
-};
-
-const sanitizeImageList = (value) => {
-  const parsed = parseMaybeObject(value, value);
-  if (!Array.isArray(parsed)) {
-    return [];
-  }
-
-  return parsed
-    .map((item) => (typeof item === "string" ? item.trim() : null))
-    .filter((item) => item);
 };
 
 const ProductAdd = () => {
@@ -248,29 +131,9 @@ const ProductAdd = () => {
       return;
     }
     try {
-      const formData = new FormData();
-
-      // строки
-      formData.append("name", JSON.stringify(product.name));
-      formData.append("brand", JSON.stringify(product.brand));
-      formData.append("description", JSON.stringify(product.description));
-      formData.append("type", JSON.stringify(product.type));
-
-      // массивы/объекты
-      formData.append("characteristics", JSON.stringify(product.characteristics));
-      formData.append("categorieIds", JSON.stringify(product.categorieIds));
-
-      // числа/булевые
-      formData.append("price", String(product.price));
-      if (product.oldPrice) formData.append("oldPrice", String(product.oldPrice));
-      formData.append("inStock", String(product.inStock));
-
-      // картинки
-      if (prefilledImages.length) {
-        formData.append("existingImages", JSON.stringify(prefilledImages));
-      }
-      product.images.forEach((file) => {
-        formData.append("images", file);
+      const formData = buildProductFormData(product, {
+        existingImages: prefilledImages,
+        newImages: product.images,
       });
 
       await createProduct(formData);

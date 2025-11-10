@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   CButton,
   CForm,
@@ -10,99 +10,124 @@ import {
   CCardBody,
   CRow,
   CCol,
-} from '@coreui/react'
-import { getProductById, updateProduct } from 'src/api/productApi'
-import { toast } from 'react-toastify';
-import { CHARACTERISTICS_BY_TYPE } from './types';
-import { API_BASE_URL } from 'src/config/api';
+  CSpinner,
+} from "@coreui/react";
+import { getProductById, updateProduct } from "src/api/productApi";
+import { toast } from "react-toastify";
+import { CHARACTERISTICS_BY_TYPE } from "./types";
+import { API_BASE_URL } from "src/config/api";
+import {
+  buildInitialProductState,
+  buildProductFormData,
+  sanitizeImageList,
+} from "./productFormUtils";
+
+const resolveImageUrl = (path) => {
+  if (!path || typeof path !== "string") return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  if (path.startsWith("/")) {
+    return `${API_BASE_URL}${path}`;
+  }
+  return `${API_BASE_URL}/${path}`;
+};
 
 const ProductEdit = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-  const [product, setProduct] = useState(null)
-  const [characteristics, setCharacteristics] = useState({})
+  const [product, setProduct] = useState(() => buildInitialProductState(null));
+  const [imagesToKeep, setImagesToKeep] = useState([]);
+  const [newImages, setNewImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchProduct = async () => {
-      const data = await getProductById(id)
+      setIsLoading(true);
+      try {
+        const data = await getProductById(id);
+        if (!isMounted) {
+          return;
+        }
 
-      setProduct({
-        ...data,
-        name_ru: data.name?.ru || '',
-        name_ro: data.name?.ro || '',
-        description_ru: data.description?.ru || '',
-        description_ro: data.description?.ro || '',
-        brand_ru: data.brand?.ru || '',
-        brand_ro: data.brand?.ro || '',
-        type_ru: data.type?.ru || '',
-        type_ro: data.type?.ro || '',
-      })
+        setProduct(buildInitialProductState(data));
+        setImagesToKeep(sanitizeImageList(data?.images));
+        setNewImages([]);
+      } catch (error) {
+        if (isMounted) {
+          toast.error("Не удалось загрузить товар");
+          console.error(error);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
 
-      setCharacteristics({
-        ru: data.characteristics?.ru || {},
-        ro: data.characteristics?.ro || {},
-      })
-    }
+    fetchProduct();
 
-    fetchProduct()
-  }, [id])
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setProduct((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
-  }
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
 
-  const handleValueChange = (key, value, lang) => {
-    const updated = { ...characteristics }
-    updated[lang] = {
-      ...updated[lang],
-      [key]: value,
-    }
-    setCharacteristics(updated)
-  }
+  const handleLangChange = (field, lang, value) => {
+    setProduct((prev) => ({
+      ...prev,
+      [field]: {
+        ...prev[field],
+        [lang]: value,
+      },
+    }));
+  };
+
+  const handleCharacteristicChange = (lang, key, value) => {
+    setProduct((prev) => ({
+      ...prev,
+      characteristics: {
+        ...prev.characteristics,
+        [lang]: {
+          ...prev.characteristics[lang],
+          [key]: value,
+        },
+      },
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    setNewImages(files);
+  };
+
+  const handleRemoveImage = (index) => {
+    setImagesToKeep((prev) => {
+      const next = [...prev];
+      next.splice(index, 1);
+      return next;
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
-
-    formData.append("name", JSON.stringify({
-      ru: product.name_ru,
-      ro: product.name_ro,
-    }));
-    formData.append("brand", JSON.stringify({
-      ru: product.brand_ru,
-      ro: product.brand_ro,
-    }));
-    formData.append("description", JSON.stringify({
-      ru: product.description_ru,
-      ro: product.description_ro,
-    }));
-    formData.append("type", JSON.stringify({
-      ru: product.type_ru,
-      ro: product.type_ro,
-    }));
-    formData.append("characteristics", JSON.stringify(characteristics));
-    formData.append("price", product.price ? String(product.price) : '0');
-    formData.append("oldPrice", product.oldPrice ? String(product.oldPrice) : '');
-    formData.append("inStock", product.inStock ? 'true' : 'false');
-    formData.append("categorieIds", JSON.stringify(product.categorieIds || []));
-
-    // старые изображения
-    formData.append("images", JSON.stringify(product.images || []));
-
-    // новые изображения (если выбрал)
-    if (product.newImages?.length) {
-      product.newImages.forEach((file) => {
-        formData.append("images", file);
-      });
-    }
-
     try {
+      const formData = buildProductFormData(product, {
+        imagesToKeep,
+        newImages,
+      });
       await updateProduct(id, formData, true);
       toast.success("Товар успешно обновлён!");
       navigate("/products");
@@ -112,159 +137,197 @@ const ProductEdit = () => {
     }
   };
 
-  if (!product) return <div>Загрузка...</div>
+  if (isLoading) {
+    return (
+      <CRow>
+        <CCol xs={12}>
+          <CCard>
+            <CCardBody className="d-flex flex-column align-items-center py-5">
+              <CSpinner color="primary" />
+              <p className="mt-3 mb-0 text-medium">Загружаем данные товара...</p>
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
+    );
+  }
 
   return (
-    <CCard>
-      <CCardBody>
-        <h4>Редактирование товара</h4>
-        <CForm onSubmit={handleSubmit}>
-          <CFormInput
-            label="Тип (RU)"
-            name="type_ru"
-            value={product.type_ru}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormInput
-            label="Тип (RO)"
-            name="type_ro"
-            value={product.type_ro}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormInput
-            label="Название (RU)"
-            name="name_ru"
-            value={product.name_ru}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormInput
-            label="Название (RO)"
-            name="name_ro"
-            value={product.name_ro}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormTextarea
-            label="Описание (RU)"
-            name="description_ru"
-            value={product.description_ru}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormTextarea
-            label="Описание (RO)"
-            name="description_ro"
-            value={product.description_ro}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormInput
-            label="Бренд (RU)"
-            name="brand_ru"
-            value={product.brand_ru}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormInput
-            label="Бренд (RO)"
-            name="brand_ro"
-            value={product.brand_ro}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormInput
-            label="Изображения"
-            type="file"
-            name="images"
-            onChange={(e) => {
-              const files = Array.from(e.target.files)
-              setProduct((prev) => ({
-                ...prev,
-                newImages: files,
-              }))
-            }}
-            className="mb-3"
-          />
-          <div className="mt-3">
-            {product?.images?.map((img, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center' }}>
-                <img src={`${API_BASE_URL}${img}`} alt="preview" width={80} />
-                <CButton
-                  color="danger"
-                  size="sm"
-                  className="ms-2"
-                  onClick={() => {
-                    setProduct((prev) => ({
-                      ...prev,
-                      images: prev.images.filter((_, i) => i !== idx),
-                    }));
-                  }}
-                >
-                  ❌
+    <CRow>
+      <CCol xs={12}>
+        <CCard>
+          <CCardBody>
+            <h4 className="mb-4">Редактирование товара</h4>
+            <CForm onSubmit={handleSubmit}>
+              <CFormInput
+                label="Название (ru)"
+                value={product.name.ru}
+                onChange={(e) => handleLangChange("name", "ru", e.target.value)}
+                className="mb-3"
+                required
+              />
+              <CFormInput
+                label="Название (ro)"
+                value={product.name.ro}
+                onChange={(e) => handleLangChange("name", "ro", e.target.value)}
+                className="mb-3"
+              />
+
+              <CFormInput
+                label="Бренд (ru)"
+                value={product.brand.ru}
+                onChange={(e) => handleLangChange("brand", "ru", e.target.value)}
+                className="mb-3"
+              />
+              <CFormInput
+                label="Бренд (ro)"
+                value={product.brand.ro}
+                onChange={(e) => handleLangChange("brand", "ro", e.target.value)}
+                className="mb-3"
+              />
+
+              <CFormTextarea
+                label="Описание (ru)"
+                value={product.description.ru}
+                onChange={(e) => handleLangChange("description", "ru", e.target.value)}
+                className="mb-3"
+              />
+              <CFormTextarea
+                label="Описание (ro)"
+                value={product.description.ro}
+                onChange={(e) => handleLangChange("description", "ro", e.target.value)}
+                className="mb-3"
+              />
+
+              <CFormInput
+                label="Тип (ru)"
+                value={product.type.ru}
+                onChange={(e) => handleLangChange("type", "ru", e.target.value)}
+                className="mb-3"
+              />
+              <CFormInput
+                label="Тип (ro)"
+                value={product.type.ro}
+                onChange={(e) => handleLangChange("type", "ro", e.target.value)}
+                className="mb-3"
+              />
+
+              <CFormInput
+                type="number"
+                name="price"
+                label="Цена"
+                value={product.price}
+                onChange={handleChange}
+                className="mb-3"
+                required
+              />
+              <CFormInput
+                type="number"
+                name="oldPrice"
+                label="Старая цена"
+                value={product.oldPrice}
+                onChange={handleChange}
+                className="mb-3"
+              />
+
+              <CFormCheck
+                type="checkbox"
+                name="inStock"
+                label="В наличии"
+                checked={product.inStock}
+                onChange={handleChange}
+                className="mb-3"
+              />
+
+              <CFormInput
+                label="Новые изображения"
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="mb-3"
+              />
+
+              {imagesToKeep.length > 0 && (
+                <div className="mb-3">
+                  <p className="mb-2">Текущие изображения товара:</p>
+                  <div className="d-flex flex-wrap gap-3">
+                    {imagesToKeep.map((imagePath, index) => {
+                      const previewUrl = resolveImageUrl(imagePath);
+                      return (
+                        <div
+                          key={`${imagePath}-${index}`}
+                          className="position-relative"
+                          style={{ maxWidth: "160px" }}
+                        >
+                          {previewUrl ? (
+                            <img
+                              src={previewUrl}
+                              alt={`Изображение ${index + 1}`}
+                              style={{
+                                width: "100%",
+                                borderRadius: "8px",
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : (
+                            <div className="bg-light border rounded d-flex align-items-center justify-content-center">
+                              <span className="text-muted px-3 py-4 small">Не удалось загрузить</span>
+                            </div>
+                          )}
+                          <CButton
+                            color="danger"
+                            size="sm"
+                            className="position-absolute top-0 end-0 translate-middle badge rounded-pill"
+                            type="button"
+                            onClick={() => handleRemoveImage(index)}
+                            title="Убрать изображение"
+                          >
+                            ✕
+                          </CButton>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <h5 className="mt-4 mb-2">Характеристики</h5>
+              {CHARACTERISTICS_BY_TYPE.ru.map((ruKey, index) => {
+                const roKey = CHARACTERISTICS_BY_TYPE.ro[index];
+                return (
+                  <CRow key={index} className="mb-2">
+                    <CCol md={6}>
+                      <CFormInput
+                        label={`${ruKey} (ru)`}
+                        value={product.characteristics.ru[ruKey] ?? ""}
+                        onChange={(e) => handleCharacteristicChange("ru", ruKey, e.target.value)}
+                      />
+                    </CCol>
+                    <CCol md={6}>
+                      <CFormInput
+                        label={`${roKey} (ro)`}
+                        value={product.characteristics.ro[roKey] ?? ""}
+                        onChange={(e) => handleCharacteristicChange("ro", roKey, e.target.value)}
+                      />
+                    </CCol>
+                  </CRow>
+                );
+              })}
+
+              <div className="mt-4">
+                <CButton type="submit" color="primary">
+                  💾 Сохранить изменения
+                </CButton>
+                <CButton color="light" className="ms-2" onClick={() => navigate(-1)}>
+                  Отмена
                 </CButton>
               </div>
-            ))}
-          </div>
-          <CFormInput
-            label="Цена"
-            name="price"
-            value={product.price}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormInput
-            type="number"
-            name="oldPrice"
-            label="Старая цена"
-            value={product.oldPrice}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <CFormCheck
-            label="В наличии"
-            name="inStock"
-            checked={product.inStock}
-            onChange={handleInputChange}
-            className="mb-3"
-          />
-          <h5 className="mt-4">Характеристики</h5>
-          {CHARACTERISTICS_BY_TYPE.ru.map((ruKey, index) => {
-            const roKey = CHARACTERISTICS_BY_TYPE.ro[index];
-            return (
-              <CRow key={index} className="mb-2">
-                <CCol md={6}>
-                  <CFormInput
-                    label={`${ruKey} (ru)`}
-                    value={characteristics.ru?.[ruKey] ?? ""}
-                    onChange={(e) => handleValueChange(ruKey, e.target.value, "ru")}
-                  />
-                </CCol>
-                <CCol md={6}>
-                  <CFormInput
-                    label={`${roKey} (ro)`}
-                    value={characteristics.ro?.[roKey] ?? ""}
-                    onChange={(e) => handleValueChange(roKey, e.target.value, "ro")}
-                  />
-                </CCol>
-              </CRow>
-            );
-          })}
+            </CForm>
+          </CCardBody>
+        </CCard>
+      </CCol>
+    </CRow>
+  );
+};
 
-          <div>
-            <CButton type="submit" color="primary">
-              💾 Сохранить изменения
-            </CButton>
-            <CButton color="light" className="ms-2" onClick={() => navigate(-1)}>
-              Отмена
-            </CButton>
-          </div>
-        </CForm>
-      </CCardBody>
-    </CCard>
-  )
-}
-
-export default ProductEdit
+export default ProductEdit;
