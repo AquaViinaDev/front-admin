@@ -87,9 +87,9 @@ const ProductEdit = () => {
       ro: product.type_ro,
     }));
     formData.append("characteristics", JSON.stringify(characteristics));
-    formData.append("price", product.price);
-    formData.append("oldPrice", product.oldPrice);
-    formData.append("inStock", product.inStock);
+    formData.append("price", product.price ? String(product.price) : '0');
+    formData.append("oldPrice", product.oldPrice ? String(product.oldPrice) : '');
+    formData.append("inStock", product.inStock ? 'true' : 'false');
     formData.append("categorieIds", JSON.stringify(product.categorieIds || []));
 
     // старые изображения
