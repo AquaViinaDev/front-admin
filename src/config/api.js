@@ -26,3 +26,11 @@ const usePublicFallback =
 export const API_BASE_URL = usePublicFallback || !rawEnvBaseUrl
   ? fallbackBaseUrl
   : rawEnvBaseUrl
+
+export const API_ORIGIN = (() => {
+  try {
+    return new URL(API_BASE_URL).origin
+  } catch {
+    return API_BASE_URL
+  }
+})()

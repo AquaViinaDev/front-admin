@@ -16,7 +16,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { createProduct, getProductById } from "src/api/productApi";
 import { toast } from "react-toastify";
 import { CHARACTERISTICS_BY_TYPE } from "./types";
-import { API_BASE_URL } from "src/config/api";
+import { API_ORIGIN } from "src/config/api";
 import {
   buildInitialProductState,
   buildProductFormData,
@@ -29,9 +29,9 @@ const resolveImageUrl = (path) => {
     return path;
   }
   if (path.startsWith("/")) {
-    return `${API_BASE_URL}${path}`;
+    return `${API_ORIGIN}${path}`;
   }
-  return `${API_BASE_URL}/${path}`;
+  return `${API_ORIGIN}/${path}`;
 };
 
 const ProductAdd = () => {
