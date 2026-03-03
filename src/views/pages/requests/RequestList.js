@@ -131,6 +131,11 @@ const resolveLocaleStyle = (locale) => {
   return LOCALE_COLORS[normalizedLocale] || null
 }
 
+const resolveProcessedAt = (request) => {
+  if (!request || request.status !== 'processed') return null
+  return request.processedAt || request.updatedAt || null
+}
+
 const renderValue = (value) => {
   if (value === null || value === undefined || value === '') return '—'
   return value
@@ -412,7 +417,7 @@ const RequestList = () => {
                               {STATUS_LABELS[request.status] || request.status || 'Новая'}
                             </CBadge>
                           </CTableDataCell>
-                          <CTableDataCell>{request.status === 'processed' ? formatDate(request.processedAt) : '—'}</CTableDataCell>
+                          <CTableDataCell>{formatDate(resolveProcessedAt(request))}</CTableDataCell>
                           <CTableDataCell>{request.name || '—'}</CTableDataCell>
                           <CTableDataCell>{request.phone || '—'}</CTableDataCell>
                           <CTableDataCell>{buildSummary(request)}</CTableDataCell>
@@ -515,7 +520,7 @@ const RequestList = () => {
                 <CBadge style={SYSTEM_BADGE_STYLE}>Язык: {(selectedRequest.locale || '—').toUpperCase()}</CBadge>
                 <span className="small text-medium-emphasis">Создано: {formatDate(selectedRequest.createdAt)}</span>
                 <span className="small text-medium-emphasis">
-                  Обработана: {selectedRequest.status === 'processed' ? formatDate(selectedRequest.processedAt) : '—'}
+                  Обработана: {formatDate(resolveProcessedAt(selectedRequest))}
                 </span>
               </div>
 
@@ -545,7 +550,7 @@ const RequestList = () => {
                       <DetailItem label="Услуга" value={selectedRequest.serviceName} />
                       <DetailItem
                         label="Обработана"
-                        value={selectedRequest.status === 'processed' ? formatDate(selectedRequest.processedAt) : '—'}
+                        value={formatDate(resolveProcessedAt(selectedRequest))}
                       />
                       <DetailItem label="Кол-во товаров" value={selectedRequest.productsCount ?? 0} />
                       <DetailItem label="Сумма товаров" value={formatMoney(selectedRequest.itemsAmount)} />
