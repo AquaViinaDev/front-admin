@@ -376,6 +376,7 @@ const RequestList = () => {
                         <CTableHeaderCell scope="col">Дата</CTableHeaderCell>
                         <CTableHeaderCell scope="col">Тип</CTableHeaderCell>
                         <CTableHeaderCell scope="col">Статус</CTableHeaderCell>
+                        <CTableHeaderCell scope="col">Обработана</CTableHeaderCell>
                         <CTableHeaderCell scope="col">Клиент</CTableHeaderCell>
                         <CTableHeaderCell scope="col">Телефон</CTableHeaderCell>
                         <CTableHeaderCell scope="col">Кратко</CTableHeaderCell>
@@ -411,6 +412,7 @@ const RequestList = () => {
                               {STATUS_LABELS[request.status] || request.status || 'Новая'}
                             </CBadge>
                           </CTableDataCell>
+                          <CTableDataCell>{request.status === 'processed' ? formatDate(request.processedAt) : '—'}</CTableDataCell>
                           <CTableDataCell>{request.name || '—'}</CTableDataCell>
                           <CTableDataCell>{request.phone || '—'}</CTableDataCell>
                           <CTableDataCell>{buildSummary(request)}</CTableDataCell>
@@ -451,7 +453,7 @@ const RequestList = () => {
                       })}
                       {visibleRequests.length === 0 && (
                         <CTableRow>
-                          <CTableDataCell colSpan={7} className="text-center text-medium-emphasis">
+                          <CTableDataCell colSpan={8} className="text-center text-medium-emphasis">
                             Заявок пока нет
                           </CTableDataCell>
                         </CTableRow>
@@ -512,6 +514,9 @@ const RequestList = () => {
                 </CBadge>
                 <CBadge style={SYSTEM_BADGE_STYLE}>Язык: {(selectedRequest.locale || '—').toUpperCase()}</CBadge>
                 <span className="small text-medium-emphasis">Создано: {formatDate(selectedRequest.createdAt)}</span>
+                <span className="small text-medium-emphasis">
+                  Обработана: {selectedRequest.status === 'processed' ? formatDate(selectedRequest.processedAt) : '—'}
+                </span>
               </div>
 
               <CRow className="g-3">
@@ -538,6 +543,10 @@ const RequestList = () => {
                       <h6 className="mb-3">Заявка</h6>
                       <DetailItem label="ID" value={selectedRequest.id} />
                       <DetailItem label="Услуга" value={selectedRequest.serviceName} />
+                      <DetailItem
+                        label="Обработана"
+                        value={selectedRequest.status === 'processed' ? formatDate(selectedRequest.processedAt) : '—'}
+                      />
                       <DetailItem label="Кол-во товаров" value={selectedRequest.productsCount ?? 0} />
                       <DetailItem label="Сумма товаров" value={formatMoney(selectedRequest.itemsAmount)} />
                       <DetailItem label="Доставка" value={formatMoney(selectedRequest.deliveryPrice)} />
