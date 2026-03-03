@@ -6,6 +6,7 @@ import {
   CCardBody,
   CCardHeader,
   CCol,
+  CFormInput,
   CFormSelect,
   CModal,
   CModalBody,
@@ -94,6 +95,7 @@ const RequestList = () => {
   const [totalPages, setTotalPages] = useState(1)
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('new')
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedRequest, setSelectedRequest] = useState(null)
   const [statusUpdatingId, setStatusUpdatingId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
@@ -106,6 +108,7 @@ const RequestList = () => {
         limit: 20,
         type: typeFilter,
         status: statusFilter,
+        search: searchQuery,
       })
       setRequests(Array.isArray(data?.items) ? data.items : [])
       setTotalPages(Number(data?.totalPages) > 0 ? Number(data.totalPages) : 1)
@@ -115,7 +118,7 @@ const RequestList = () => {
     } finally {
       setLoading(false)
     }
-  }, [page, typeFilter, statusFilter])
+  }, [page, typeFilter, statusFilter, searchQuery])
 
   useEffect(() => {
     fetchRequests()
@@ -174,6 +177,18 @@ const RequestList = () => {
     : {}
 
   const isRowBusy = (requestId) => statusUpdatingId === requestId || deletingId === requestId
+  const normalizedSearch = searchQuery.trim().toLowerCase()
+  const visibleRequests = requests.filter((request) => {
+    const matchesStatus = request?.status === statusFilter
+    if (!matchesStatus) return false
+    if (!normalizedSearch) return true
+
+    try {
+      return JSON.stringify(request).toLowerCase().includes(normalizedSearch)
+    } catch {
+      return false
+    }
+  })
 
   return (
     <>
@@ -183,6 +198,14 @@ const RequestList = () => {
             <CCardHeader className="d-flex justify-content-between align-items-center gap-2">
               <strong>Заявки</strong>
               <div className="d-flex align-items-center gap-2">
+                <CFormInput
+                  placeholder="Поиск по всем полям"
+                  value={searchQuery}
+                  onChange={(event) => {
+                    setPage(1)
+                    setSearchQuery(event.target.value)
+                  }}
+                />
                 <CFormSelect
                   value={typeFilter}
                   onChange={(event) => {
@@ -239,7 +262,7 @@ const RequestList = () => {
                       </CTableRow>
                     </CTableHead>
                     <CTableBody>
-                      {requests.map((request) => (
+                      {visibleRequests.map((request) => (
                         <CTableRow key={request.id}>
                           <CTableDataCell>{formatDate(request.createdAt)}</CTableDataCell>
                           <CTableDataCell>
@@ -287,7 +310,7 @@ const RequestList = () => {
                           </CTableDataCell>
                         </CTableRow>
                       ))}
-                      {requests.length === 0 && (
+                      {visibleRequests.length === 0 && (
                         <CTableRow>
                           <CTableDataCell colSpan={7} className="text-center text-medium-emphasis">
                             Заявок пока нет
