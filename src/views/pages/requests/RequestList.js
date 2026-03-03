@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import CIcon from '@coreui/icons-react'
 import { cilCheckCircle, cilLoopCircular, cilTrash } from '@coreui/icons'
 import {
@@ -249,6 +249,36 @@ const RequestList = () => {
     ? selectedRequest.meta
     : {}
 
+  const availableTypes = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          requests
+            .filter((request) => request?.status === statusFilter)
+            .map((request) => request?.type)
+            .filter((type) => Boolean(type) && Boolean(TYPE_LABELS[type])),
+        ),
+      ),
+    [requests, statusFilter],
+  )
+
+  const typeOptions = useMemo(
+    () => [
+      { label: 'Все типы', value: 'all' },
+      ...availableTypes.map((type) => ({
+        label: TYPE_LABELS[type],
+        value: type,
+      })),
+    ],
+    [availableTypes],
+  )
+
+  useEffect(() => {
+    if (typeFilter !== 'all' && !availableTypes.includes(typeFilter)) {
+      updateActiveTabState({ typeFilter: 'all' })
+    }
+  }, [availableTypes, typeFilter, updateActiveTabState])
+
   const isRowBusy = (requestId) => statusUpdatingId === requestId || deletingId === requestId
   const normalizedSearch = searchQuery.trim().toLowerCase()
   const visibleRequests = requests
@@ -321,12 +351,7 @@ const RequestList = () => {
                           typeFilter: event.target.value,
                         })
                       }}
-                      options={[
-                        { label: 'Все типы', value: 'all' },
-                        { label: TYPE_LABELS.order, value: 'order' },
-                        { label: TYPE_LABELS.consultation, value: 'consultation' },
-                        { label: TYPE_LABELS.service, value: 'service' },
-                      ]}
+                      options={typeOptions}
                     />
                     <CFormSelect
                       value={dateSort}
