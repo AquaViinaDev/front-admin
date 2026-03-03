@@ -61,6 +61,13 @@ const DATE_SORT_OPTIONS = [
   { value: 'asc', label: 'Сначала старые' },
 ]
 
+const DEFAULT_TAB_STATE = {
+  page: 1,
+  typeFilter: 'all',
+  searchQuery: '',
+  dateSort: 'desc',
+}
+
 const LOCALE_COLORS = {
   ru: {
     label: 'RU',
@@ -116,15 +123,42 @@ const resolveLocaleStyle = (locale) => {
 const RequestList = () => {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('new')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [dateSort, setDateSort] = useState('desc')
+  const [tabState, setTabState] = useState({
+    new: { ...DEFAULT_TAB_STATE },
+    processed: { ...DEFAULT_TAB_STATE },
+  })
+  const [tabTotalPages, setTabTotalPages] = useState({
+    new: 1,
+    processed: 1,
+  })
   const [selectedRequest, setSelectedRequest] = useState(null)
   const [statusUpdatingId, setStatusUpdatingId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
+
+  const activeTabState = tabState[statusFilter] || DEFAULT_TAB_STATE
+  const page = activeTabState.page
+  const typeFilter = activeTabState.typeFilter
+  const searchQuery = activeTabState.searchQuery
+  const dateSort = activeTabState.dateSort
+  const totalPages = tabTotalPages[statusFilter] || 1
+
+  const updateActiveTabState = useCallback(
+    (updater) => {
+      setTabState((prev) => {
+        const current = prev[statusFilter] || DEFAULT_TAB_STATE
+        const patch = typeof updater === 'function' ? updater(current) : updater
+        return {
+          ...prev,
+          [statusFilter]: {
+            ...current,
+            ...patch,
+          },
+        }
+      })
+    },
+    [statusFilter],
+  )
 
   const fetchRequests = useCallback(async () => {
     setLoading(true)
@@ -132,19 +166,20 @@ const RequestList = () => {
       const data = await getRequests({
         page,
         limit: 20,
-        type: typeFilter,
         status: statusFilter,
-        search: searchQuery,
       })
       setRequests(Array.isArray(data?.items) ? data.items : [])
-      setTotalPages(Number(data?.totalPages) > 0 ? Number(data.totalPages) : 1)
+      setTabTotalPages((prev) => ({
+        ...prev,
+        [statusFilter]: Number(data?.totalPages) > 0 ? Number(data.totalPages) : 1,
+      }))
     } catch (error) {
       console.error(error)
       toast.error('Не удалось загрузить заявки')
     } finally {
       setLoading(false)
     }
-  }, [page, typeFilter, statusFilter, searchQuery])
+  }, [page, statusFilter])
 
   useEffect(() => {
     fetchRequests()
@@ -234,15 +269,19 @@ const RequestList = () => {
                   placeholder="Поиск по всем полям"
                   value={searchQuery}
                   onChange={(event) => {
-                    setPage(1)
-                    setSearchQuery(event.target.value)
+                    updateActiveTabState({
+                      page: 1,
+                      searchQuery: event.target.value,
+                    })
                   }}
                 />
                 <CFormSelect
                   value={typeFilter}
                   onChange={(event) => {
-                    setPage(1)
-                    setTypeFilter(event.target.value)
+                    updateActiveTabState({
+                      page: 1,
+                      typeFilter: event.target.value,
+                    })
                   }}
                   options={[
                     { label: 'Все типы', value: 'all' },
@@ -253,7 +292,7 @@ const RequestList = () => {
                 />
                 <CFormSelect
                   value={dateSort}
-                  onChange={(event) => setDateSort(event.target.value)}
+                  onChange={(event) => updateActiveTabState({ dateSort: event.target.value })}
                   options={DATE_SORT_OPTIONS}
                 />
                 <CButton color="secondary" variant="outline" onClick={fetchRequests}>
@@ -275,7 +314,6 @@ const RequestList = () => {
                           onClick={(event) => {
                             event.preventDefault()
                             if (statusFilter === tab.value) return
-                            setPage(1)
                             setStatusFilter(tab.value)
                           }}
                         >
@@ -383,7 +421,11 @@ const RequestList = () => {
                         size="sm"
                         color="secondary"
                         disabled={page <= 1}
-                        onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                        onClick={() =>
+                          updateActiveTabState((prev) => ({
+                            page: Math.max(1, prev.page - 1),
+                          }))
+                        }
                       >
                         Назад
                       </CButton>
@@ -391,7 +433,11 @@ const RequestList = () => {
                         size="sm"
                         color="secondary"
                         disabled={page >= totalPages}
-                        onClick={() => setPage((prev) => prev + 1)}
+                        onClick={() =>
+                          updateActiveTabState((prev) => ({
+                            page: prev.page + 1,
+                          }))
+                        }
                       >
                         Вперёд
                       </CButton>
