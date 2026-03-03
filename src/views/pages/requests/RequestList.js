@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
+import CIcon from '@coreui/icons-react'
+import { cilCheckCircle, cilLoopCircular, cilMagnifyingGlass, cilTrash } from '@coreui/icons'
 import {
   CBadge,
   CButton,
@@ -329,8 +331,10 @@ const RequestList = () => {
                                 variant="outline"
                                 disabled={isRowBusy(request.id)}
                                 onClick={() => handleToggleStatus(request)}
+                                title={request.status === 'processed' ? 'Вернуть в новые' : 'Отметить обработанной'}
+                                aria-label={request.status === 'processed' ? 'Вернуть в новые' : 'Отметить обработанной'}
                               >
-                                {request.status === 'processed' ? 'В новые' : 'Обработано'}
+                                <CIcon icon={request.status === 'processed' ? cilLoopCircular : cilCheckCircle} />
                               </CButton>
                               <CButton
                                 size="sm"
@@ -338,16 +342,20 @@ const RequestList = () => {
                                 variant="outline"
                                 disabled={isRowBusy(request.id)}
                                 onClick={() => handleDelete(request)}
+                                title="Удалить заявку"
+                                aria-label="Удалить заявку"
                               >
-                                Удалить
+                                <CIcon icon={cilTrash} />
                               </CButton>
                               <CButton
                                 size="sm"
                                 color="info"
                                 variant="outline"
                                 onClick={() => setSelectedRequest(request)}
+                                title="Подробнее"
+                                aria-label="Подробнее"
                               >
-                                Подробнее
+                                <CIcon icon={cilMagnifyingGlass} />
                               </CButton>
                             </div>
                           </CTableDataCell>
