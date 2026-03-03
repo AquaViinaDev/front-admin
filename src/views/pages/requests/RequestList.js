@@ -21,7 +21,7 @@ import {
   CTableRow,
 } from '@coreui/react'
 import { toast } from 'react-toastify'
-import { getRequests } from 'src/api/requestApi'
+import { deleteRequest, getRequests, updateRequestStatus } from 'src/api/requestApi'
 
 const TYPE_LABELS = {
   order: 'Заказ товара',
@@ -33,6 +33,16 @@ const TYPE_COLORS = {
   order: 'primary',
   consultation: 'warning',
   service: 'info',
+}
+
+const STATUS_LABELS = {
+  new: 'Новая',
+  processed: 'Обработана',
+}
+
+const STATUS_COLORS = {
+  new: 'secondary',
+  processed: 'success',
 }
 
 const formatDate = (value) => {
@@ -54,6 +64,21 @@ const renderMetaValue = (value) => {
   return String(value)
 }
 
+const resolveLocation = (meta) => {
+  if (!meta || typeof meta !== 'object') return '—'
+  const location = meta.location && typeof meta.location === 'object' ? meta.location : null
+  if (!location) return '—'
+
+  const fromLabel = typeof location.label === 'string' ? location.label.trim() : ''
+  if (fromLabel) return fromLabel
+
+  const parts = [location.country, location.region, location.city]
+    .map((part) => (typeof part === 'string' ? part.trim() : ''))
+    .filter(Boolean)
+
+  return parts.length > 0 ? parts.join(', ') : '—'
+}
+
 const RequestList = () => {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
@@ -61,6 +86,8 @@ const RequestList = () => {
   const [totalPages, setTotalPages] = useState(1)
   const [typeFilter, setTypeFilter] = useState('all')
   const [selectedRequest, setSelectedRequest] = useState(null)
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
 
   const fetchRequests = useCallback(async () => {
     setLoading(true)
@@ -94,9 +121,48 @@ const RequestList = () => {
     return 'Запрос звонка'
   }
 
+  const handleToggleStatus = async (request) => {
+    const nextStatus = request.status === 'processed' ? 'new' : 'processed'
+    setStatusUpdatingId(request.id)
+
+    try {
+      const updated = await updateRequestStatus(request.id, nextStatus)
+      setRequests((prev) => prev.map((item) => (item.id === request.id ? updated : item)))
+      setSelectedRequest((prev) => (prev?.id === request.id ? updated : prev))
+      toast.success(nextStatus === 'processed' ? 'Заявка отмечена как обработанная' : 'Заявка возвращена в новые')
+    } catch (error) {
+      console.error(error)
+      toast.error('Не удалось обновить статус')
+    } finally {
+      setStatusUpdatingId(null)
+    }
+  }
+
+  const handleDelete = async (request) => {
+    const confirmed = window.confirm(`Удалить заявку #${request.id}?`)
+    if (!confirmed) return
+
+    setDeletingId(request.id)
+
+    try {
+      await deleteRequest(request.id)
+      setRequests((prev) => prev.filter((item) => item.id !== request.id))
+      setSelectedRequest((prev) => (prev?.id === request.id ? null : prev))
+      toast.success('Заявка удалена')
+      fetchRequests()
+    } catch (error) {
+      console.error(error)
+      toast.error('Не удалось удалить заявку')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const meta = selectedRequest?.meta && typeof selectedRequest.meta === 'object'
     ? selectedRequest.meta
     : {}
+
+  const isRowBusy = (requestId) => statusUpdatingId === requestId || deletingId === requestId
 
   return (
     <>
@@ -134,6 +200,7 @@ const RequestList = () => {
                       <CTableRow>
                         <CTableHeaderCell scope="col">Дата</CTableHeaderCell>
                         <CTableHeaderCell scope="col">Тип</CTableHeaderCell>
+                        <CTableHeaderCell scope="col">Статус</CTableHeaderCell>
                         <CTableHeaderCell scope="col">Клиент</CTableHeaderCell>
                         <CTableHeaderCell scope="col">Телефон</CTableHeaderCell>
                         <CTableHeaderCell scope="col">Кратко</CTableHeaderCell>
@@ -151,24 +218,49 @@ const RequestList = () => {
                               {TYPE_LABELS[request.type] || request.type}
                             </CBadge>
                           </CTableDataCell>
+                          <CTableDataCell>
+                            <CBadge color={STATUS_COLORS[request.status] || 'secondary'}>
+                              {STATUS_LABELS[request.status] || request.status || 'Новая'}
+                            </CBadge>
+                          </CTableDataCell>
                           <CTableDataCell>{request.name || '—'}</CTableDataCell>
                           <CTableDataCell>{request.phone || '—'}</CTableDataCell>
                           <CTableDataCell>{buildSummary(request)}</CTableDataCell>
                           <CTableDataCell className="text-end">
-                            <CButton
-                              size="sm"
-                              color="info"
-                              variant="outline"
-                              onClick={() => setSelectedRequest(request)}
-                            >
-                              Подробнее
-                            </CButton>
+                            <div className="d-inline-flex gap-2">
+                              <CButton
+                                size="sm"
+                                color="success"
+                                variant="outline"
+                                disabled={isRowBusy(request.id)}
+                                onClick={() => handleToggleStatus(request)}
+                              >
+                                {request.status === 'processed' ? 'В новые' : 'Обработано'}
+                              </CButton>
+                              <CButton
+                                size="sm"
+                                color="danger"
+                                variant="outline"
+                                disabled={isRowBusy(request.id)}
+                                onClick={() => handleDelete(request)}
+                              >
+                                Удалить
+                              </CButton>
+                              <CButton
+                                size="sm"
+                                color="info"
+                                variant="outline"
+                                onClick={() => setSelectedRequest(request)}
+                              >
+                                Подробнее
+                              </CButton>
+                            </div>
                           </CTableDataCell>
                         </CTableRow>
                       ))}
                       {requests.length === 0 && (
                         <CTableRow>
-                          <CTableDataCell colSpan={6} className="text-center text-medium-emphasis">
+                          <CTableDataCell colSpan={7} className="text-center text-medium-emphasis">
                             Заявок пока нет
                           </CTableDataCell>
                         </CTableRow>
@@ -213,6 +305,7 @@ const RequestList = () => {
           {selectedRequest && (
             <div className="d-flex flex-column gap-2">
               <p className="mb-0"><strong>Тип:</strong> {TYPE_LABELS[selectedRequest.type] || selectedRequest.type}</p>
+              <p className="mb-0"><strong>Статус:</strong> {STATUS_LABELS[selectedRequest.status] || selectedRequest.status || 'Новая'}</p>
               <p className="mb-0"><strong>Создано:</strong> {formatDate(selectedRequest.createdAt)}</p>
               <p className="mb-0"><strong>Язык:</strong> {selectedRequest.locale || '—'}</p>
               <p className="mb-0"><strong>Имя:</strong> {selectedRequest.name || '—'}</p>
@@ -236,6 +329,14 @@ const RequestList = () => {
                     {selectedRequest.products.map((product, index) => (
                       <li key={`${selectedRequest.id}-${index}`}>
                         {product.name} — {product.qty} x {formatMoney(product.price)} = {formatMoney(product.totalPrice)}
+                        {product.productUrl && (
+                          <>
+                            {' '}
+                            <a href={product.productUrl} target="_blank" rel="noreferrer">
+                              Открыть товар
+                            </a>
+                          </>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -244,11 +345,7 @@ const RequestList = () => {
 
               <hr />
               <p className="mb-0"><strong>IP:</strong> {renderMetaValue(meta.ip)}</p>
-              <p className="mb-0"><strong>Path:</strong> {renderMetaValue(meta.path)}</p>
-              <p className="mb-0"><strong>Method:</strong> {renderMetaValue(meta.method)}</p>
-              <p className="mb-0"><strong>Origin:</strong> {renderMetaValue(meta.origin)}</p>
-              <p className="mb-0"><strong>Referer:</strong> {renderMetaValue(meta.referer)}</p>
-              <p className="mb-0"><strong>User-Agent:</strong> {renderMetaValue(meta.userAgent)}</p>
+              <p className="mb-0"><strong>Локация:</strong> {resolveLocation(meta)}</p>
             </div>
           )}
         </CModalBody>

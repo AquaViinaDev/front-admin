@@ -26,3 +26,33 @@ export const getRequestById = async (id) => {
   }
   return response.json()
 }
+
+export const updateRequestStatus = async (id, status) => {
+  const response = await fetch(`${API_BASE_URL}/requests/${id}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status }),
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    throw new Error(`Ошибка при обновлении статуса заявки: ${response.status} ${body}`)
+  }
+
+  return response.json()
+}
+
+export const deleteRequest = async (id) => {
+  const response = await fetch(`${API_BASE_URL}/requests/${id}`, {
+    method: 'DELETE',
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    throw new Error(`Ошибка при удалении заявки: ${response.status} ${body}`)
+  }
+
+  return response.json()
+}
