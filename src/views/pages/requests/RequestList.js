@@ -218,20 +218,6 @@ const RequestList = () => {
             <CCardHeader className="d-flex justify-content-between align-items-center gap-2">
               <strong>Заявки</strong>
               <div className="d-flex align-items-center gap-2">
-                <div className="d-flex align-items-center gap-2 me-2">
-                  {Object.values(LOCALE_COLORS).map((localeInfo) => (
-                    <CBadge
-                      key={localeInfo.label}
-                      color="light"
-                      style={{
-                        border: `1px solid ${localeInfo.border}`,
-                        backgroundColor: localeInfo.background,
-                      }}
-                    >
-                      {localeInfo.label}
-                    </CBadge>
-                  ))}
-                </div>
                 <CFormInput
                   placeholder="Поиск по всем полям"
                   value={searchQuery}
