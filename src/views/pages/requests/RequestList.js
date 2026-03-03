@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import CIcon from '@coreui/icons-react'
-import { cilCheckCircle, cilLoopCircular, cilMagnifyingGlass, cilTrash } from '@coreui/icons'
+import { cilCheckCircle, cilLoopCircular, cilTrash } from '@coreui/icons'
 import {
   CBadge,
   CButton,
@@ -342,12 +342,14 @@ const RequestList = () => {
                         return (
                           <CTableRow
                             key={request.id}
+                            onClick={() => setSelectedRequest(request)}
                             style={
                               localeStyle
                                 ? {
                                     backgroundColor: localeStyle.background,
+                                    cursor: 'pointer',
                                   }
-                                : undefined
+                                : { cursor: 'pointer' }
                             }
                           >
                           <CTableDataCell>{formatDate(request.createdAt)}</CTableDataCell>
@@ -371,7 +373,10 @@ const RequestList = () => {
                                 color="success"
                                 variant="outline"
                                 disabled={isRowBusy(request.id)}
-                                onClick={() => handleToggleStatus(request)}
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  handleToggleStatus(request)
+                                }}
                                 title={request.status === 'processed' ? 'Вернуть в новые' : 'Отметить обработанной'}
                                 aria-label={request.status === 'processed' ? 'Вернуть в новые' : 'Отметить обработанной'}
                               >
@@ -382,21 +387,14 @@ const RequestList = () => {
                                 color="danger"
                                 variant="outline"
                                 disabled={isRowBusy(request.id)}
-                                onClick={() => handleDelete(request)}
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  handleDelete(request)
+                                }}
                                 title="Удалить заявку"
                                 aria-label="Удалить заявку"
                               >
                                 <CIcon icon={cilTrash} />
-                              </CButton>
-                              <CButton
-                                size="sm"
-                                color="info"
-                                variant="outline"
-                                onClick={() => setSelectedRequest(request)}
-                                title="Подробнее"
-                                aria-label="Подробнее"
-                              >
-                                <CIcon icon={cilMagnifyingGlass} />
                               </CButton>
                             </div>
                           </CTableDataCell>
