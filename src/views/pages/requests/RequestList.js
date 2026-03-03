@@ -317,8 +317,8 @@ const RequestList = () => {
 
   return (
     <>
-      <CRow>
-        <CCol xs={12}>
+      <CRow className="g-0">
+        <CCol xs={12} className="px-0">
           <CCard className="mb-4">
             <CCardHeader className="d-flex justify-content-between align-items-center gap-2">
               <strong>Заявки</strong>
@@ -326,12 +326,14 @@ const RequestList = () => {
                 Обновить
               </CButton>
             </CCardHeader>
-            <CCardBody>
+            <CCardBody className="px-0 pb-0">
               {loading ? (
-                <CSpinner color="primary" />
+                <div className="px-3 py-4">
+                  <CSpinner color="primary" />
+                </div>
               ) : (
                 <>
-                  <CNav variant="tabs" className="mb-3">
+                  <CNav variant="tabs" className="mb-3 px-3">
                     {STATUS_TABS.map((tab) => (
                       <CNavItem key={tab.value}>
                         <CNavLink
@@ -348,7 +350,7 @@ const RequestList = () => {
                       </CNavItem>
                     ))}
                   </CNav>
-                  <div className="d-flex align-items-center gap-2 mb-3">
+                  <div className="d-flex align-items-center gap-2 mb-3 px-3">
                     <CFormInput
                       placeholder="Поиск по всем полям"
                       value={searchQuery}
@@ -375,7 +377,7 @@ const RequestList = () => {
                       options={DATE_SORT_OPTIONS}
                     />
                   </div>
-                  <CTable striped hover responsive>
+                  <CTable striped hover responsive className="mb-0">
                     <CTableHead>
                       <CTableRow>
                         <CTableHeaderCell scope="col">Дата</CTableHeaderCell>
@@ -465,7 +467,7 @@ const RequestList = () => {
                       )}
                     </CTableBody>
                   </CTable>
-                  <div className="d-flex justify-content-between align-items-center mt-3">
+                  <div className="d-flex justify-content-between align-items-center mt-3 px-3 pb-3">
                     <span className="small text-medium-emphasis">
                       Страница {page} из {totalPages}
                     </span>
@@ -503,7 +505,7 @@ const RequestList = () => {
         </CCol>
       </CRow>
 
-      <CModal size="lg" visible={Boolean(selectedRequest)} onClose={() => setSelectedRequest(null)}>
+      <CModal size="xl" visible={Boolean(selectedRequest)} onClose={() => setSelectedRequest(null)}>
         <CModalHeader>
           <CModalTitle>Заявка #{selectedRequest?.id || '—'}</CModalTitle>
         </CModalHeader>
@@ -525,7 +527,7 @@ const RequestList = () => {
               </div>
 
               <CRow className="g-3">
-                <CCol xs={12} md={6}>
+                <CCol xs={12} md={12}>
                   <CCard className="h-100 border" style={SYSTEM_SURFACE_STYLE}>
                     <CCardBody>
                       <h6 className="mb-3">Клиент</h6>
@@ -542,7 +544,7 @@ const RequestList = () => {
                   </CCard>
                 </CCol>
 
-                <CCol xs={12} md={6}>
+                <CCol xs={12} md={12}>
                   <CCard className="h-100 border" style={SYSTEM_SURFACE_STYLE}>
                     <CCardBody>
                       <h6 className="mb-3">Заявка</h6>
