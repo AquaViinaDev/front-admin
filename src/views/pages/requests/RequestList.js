@@ -54,6 +54,19 @@ const STATUS_TABS = [
   { value: 'processed', label: 'Обработанные' },
 ]
 
+const LOCALE_COLORS = {
+  ru: {
+    label: 'RU',
+    background: '#edf4ff',
+    border: '#b8d4ff',
+  },
+  ro: {
+    label: 'RO',
+    background: '#edfff3',
+    border: '#b5f0ca',
+  },
+}
+
 const formatDate = (value) => {
   if (!value) return '—'
   const date = new Date(value)
@@ -86,6 +99,11 @@ const resolveLocation = (meta) => {
     .filter(Boolean)
 
   return parts.length > 0 ? parts.join(', ') : '—'
+}
+
+const resolveLocaleStyle = (locale) => {
+  const normalizedLocale = typeof locale === 'string' ? locale.toLowerCase().trim() : ''
+  return LOCALE_COLORS[normalizedLocale] || null
 }
 
 const RequestList = () => {
@@ -198,6 +216,20 @@ const RequestList = () => {
             <CCardHeader className="d-flex justify-content-between align-items-center gap-2">
               <strong>Заявки</strong>
               <div className="d-flex align-items-center gap-2">
+                <div className="d-flex align-items-center gap-2 me-2">
+                  {Object.values(LOCALE_COLORS).map((localeInfo) => (
+                    <CBadge
+                      key={localeInfo.label}
+                      color="light"
+                      style={{
+                        border: `1px solid ${localeInfo.border}`,
+                        backgroundColor: localeInfo.background,
+                      }}
+                    >
+                      {localeInfo.label}
+                    </CBadge>
+                  ))}
+                </div>
                 <CFormInput
                   placeholder="Поиск по всем полям"
                   value={searchQuery}
@@ -262,8 +294,19 @@ const RequestList = () => {
                       </CTableRow>
                     </CTableHead>
                     <CTableBody>
-                      {visibleRequests.map((request) => (
-                        <CTableRow key={request.id}>
+                      {visibleRequests.map((request) => {
+                        const localeStyle = resolveLocaleStyle(request.locale)
+                        return (
+                          <CTableRow
+                            key={request.id}
+                            style={
+                              localeStyle
+                                ? {
+                                    backgroundColor: localeStyle.background,
+                                  }
+                                : undefined
+                            }
+                          >
                           <CTableDataCell>{formatDate(request.createdAt)}</CTableDataCell>
                           <CTableDataCell>
                             <CBadge color={TYPE_COLORS[request.type] || 'secondary'}>
@@ -308,8 +351,9 @@ const RequestList = () => {
                               </CButton>
                             </div>
                           </CTableDataCell>
-                        </CTableRow>
-                      ))}
+                          </CTableRow>
+                        )
+                      })}
                       {visibleRequests.length === 0 && (
                         <CTableRow>
                           <CTableDataCell colSpan={7} className="text-center text-medium-emphasis">
