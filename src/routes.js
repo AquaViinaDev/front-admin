@@ -62,7 +62,7 @@ const routes = [
   {path: '/products/add', name: 'Create products', element: CreateProductPage},
   {path: '/products/:id/edit', name: 'Edit product', element: EditProductPage},
   {path: '/requests', name: 'Requests', element: RequestsPage},
-  // { path: '/dashboard', name: 'Dashboard', element: Dashboard },
+  {path: '/dashboard', name: 'Dashboard', element: Dashboard},
   // { path: '/theme', name: 'Theme', element: Colors, exact: true },
   // { path: '/theme/colors', name: 'Colors', element: Colors },
   // { path: '/theme/typography', name: 'Typography', element: Typography },
