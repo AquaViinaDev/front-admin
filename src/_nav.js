@@ -35,6 +35,11 @@ const _nav = [
     name: 'Товары',
     to: '/products',
   },
+  {
+    component: CNavItem,
+    name: 'Заявки',
+    to: '/requests',
+  },
   // {
   //   component: CNavItem,
   //   name: 'Typography',
