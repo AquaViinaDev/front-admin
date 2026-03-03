@@ -56,6 +56,11 @@ const STATUS_TABS = [
   { value: 'processed', label: 'Обработанные' },
 ]
 
+const DATE_SORT_OPTIONS = [
+  { value: 'desc', label: 'Сначала новые' },
+  { value: 'asc', label: 'Сначала старые' },
+]
+
 const LOCALE_COLORS = {
   ru: {
     label: 'RU',
@@ -116,6 +121,7 @@ const RequestList = () => {
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('new')
   const [searchQuery, setSearchQuery] = useState('')
+  const [dateSort, setDateSort] = useState('desc')
   const [selectedRequest, setSelectedRequest] = useState(null)
   const [statusUpdatingId, setStatusUpdatingId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
@@ -198,17 +204,23 @@ const RequestList = () => {
 
   const isRowBusy = (requestId) => statusUpdatingId === requestId || deletingId === requestId
   const normalizedSearch = searchQuery.trim().toLowerCase()
-  const visibleRequests = requests.filter((request) => {
-    const matchesStatus = request?.status === statusFilter
-    if (!matchesStatus) return false
-    if (!normalizedSearch) return true
-
-    try {
-      return JSON.stringify(request).toLowerCase().includes(normalizedSearch)
-    } catch {
-      return false
-    }
-  })
+  const visibleRequests = requests
+    .filter((request) => request?.status === statusFilter)
+    .filter((request) => (typeFilter === 'all' ? true : request?.type === typeFilter))
+    .filter((request) => {
+      if (!normalizedSearch) return true
+      try {
+        return JSON.stringify(request).toLowerCase().includes(normalizedSearch)
+      } catch {
+        return false
+      }
+    })
+    .sort((a, b) => {
+      const first = new Date(a?.createdAt || 0).getTime()
+      const second = new Date(b?.createdAt || 0).getTime()
+      if (dateSort === 'asc') return first - second
+      return second - first
+    })
 
   return (
     <>
@@ -238,6 +250,11 @@ const RequestList = () => {
                     { label: TYPE_LABELS.consultation, value: 'consultation' },
                     { label: TYPE_LABELS.service, value: 'service' },
                   ]}
+                />
+                <CFormSelect
+                  value={dateSort}
+                  onChange={(event) => setDateSort(event.target.value)}
+                  options={DATE_SORT_OPTIONS}
                 />
                 <CButton color="secondary" variant="outline" onClick={fetchRequests}>
                   Обновить
