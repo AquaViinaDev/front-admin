@@ -264,41 +264,9 @@ const RequestList = () => {
           <CCard className="mb-4">
             <CCardHeader className="d-flex justify-content-between align-items-center gap-2">
               <strong>Заявки</strong>
-              <div className="d-flex align-items-center gap-2">
-                <CFormInput
-                  placeholder="Поиск по всем полям"
-                  value={searchQuery}
-                  onChange={(event) => {
-                    updateActiveTabState({
-                      page: 1,
-                      searchQuery: event.target.value,
-                    })
-                  }}
-                />
-                <CFormSelect
-                  value={typeFilter}
-                  onChange={(event) => {
-                    updateActiveTabState({
-                      page: 1,
-                      typeFilter: event.target.value,
-                    })
-                  }}
-                  options={[
-                    { label: 'Все типы', value: 'all' },
-                    { label: TYPE_LABELS.order, value: 'order' },
-                    { label: TYPE_LABELS.consultation, value: 'consultation' },
-                    { label: TYPE_LABELS.service, value: 'service' },
-                  ]}
-                />
-                <CFormSelect
-                  value={dateSort}
-                  onChange={(event) => updateActiveTabState({ dateSort: event.target.value })}
-                  options={DATE_SORT_OPTIONS}
-                />
-                <CButton color="secondary" variant="outline" onClick={fetchRequests}>
-                  Обновить
-                </CButton>
-              </div>
+              <CButton color="secondary" variant="outline" onClick={fetchRequests}>
+                Обновить
+              </CButton>
             </CCardHeader>
             <CCardBody>
               {loading ? (
@@ -322,6 +290,38 @@ const RequestList = () => {
                       </CNavItem>
                     ))}
                   </CNav>
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    <CFormInput
+                      placeholder="Поиск по всем полям"
+                      value={searchQuery}
+                      onChange={(event) => {
+                        updateActiveTabState({
+                          page: 1,
+                          searchQuery: event.target.value,
+                        })
+                      }}
+                    />
+                    <CFormSelect
+                      value={typeFilter}
+                      onChange={(event) => {
+                        updateActiveTabState({
+                          page: 1,
+                          typeFilter: event.target.value,
+                        })
+                      }}
+                      options={[
+                        { label: 'Все типы', value: 'all' },
+                        { label: TYPE_LABELS.order, value: 'order' },
+                        { label: TYPE_LABELS.consultation, value: 'consultation' },
+                        { label: TYPE_LABELS.service, value: 'service' },
+                      ]}
+                    />
+                    <CFormSelect
+                      value={dateSort}
+                      onChange={(event) => updateActiveTabState({ dateSort: event.target.value })}
+                      options={DATE_SORT_OPTIONS}
+                    />
+                  </div>
                   <CTable striped hover responsive>
                     <CTableHead>
                       <CTableRow>
