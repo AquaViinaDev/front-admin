@@ -61,6 +61,17 @@ const DATE_SORT_OPTIONS = [
   { value: 'asc', label: 'Сначала старые' },
 ]
 
+const SYSTEM_SURFACE_STYLE = {
+  backgroundColor: 'var(--cui-secondary-bg)',
+  borderColor: 'var(--cui-border-color)',
+}
+
+const SYSTEM_BADGE_STYLE = {
+  backgroundColor: 'var(--cui-secondary-bg)',
+  color: 'var(--cui-body-color)',
+  border: '1px solid var(--cui-border-color)',
+}
+
 const DEFAULT_TAB_STATE = {
   page: 1,
   typeFilter: 'all',
@@ -499,13 +510,13 @@ const RequestList = () => {
                 <CBadge color={STATUS_COLORS[selectedRequest.status] || 'secondary'}>
                   {STATUS_LABELS[selectedRequest.status] || selectedRequest.status || 'Новая'}
                 </CBadge>
-                <CBadge color="light">Язык: {(selectedRequest.locale || '—').toUpperCase()}</CBadge>
+                <CBadge style={SYSTEM_BADGE_STYLE}>Язык: {(selectedRequest.locale || '—').toUpperCase()}</CBadge>
                 <span className="small text-medium-emphasis">Создано: {formatDate(selectedRequest.createdAt)}</span>
               </div>
 
               <CRow className="g-3">
                 <CCol xs={12} md={6}>
-                  <CCard className="h-100 border-0 bg-light">
+                  <CCard className="h-100 border" style={SYSTEM_SURFACE_STYLE}>
                     <CCardBody>
                       <h6 className="mb-3">Клиент</h6>
                       <DetailItem label="Имя" value={selectedRequest.name} />
@@ -522,7 +533,7 @@ const RequestList = () => {
                 </CCol>
 
                 <CCol xs={12} md={6}>
-                  <CCard className="h-100 border-0 bg-light">
+                  <CCard className="h-100 border" style={SYSTEM_SURFACE_STYLE}>
                     <CCardBody>
                       <h6 className="mb-3">Заявка</h6>
                       <DetailItem label="ID" value={selectedRequest.id} />
@@ -537,7 +548,7 @@ const RequestList = () => {
               </CRow>
 
               {Array.isArray(selectedRequest.products) && selectedRequest.products.length > 0 && (
-                <CCard className="border-0 bg-light">
+                <CCard className="border" style={SYSTEM_SURFACE_STYLE}>
                   <CCardBody>
                     <h6 className="mb-3">Товары</h6>
                     <CTable responsive small align="middle" className="mb-0">
@@ -574,7 +585,7 @@ const RequestList = () => {
                 </CCard>
               )}
 
-              <CCard className="border-0 bg-light">
+              <CCard className="border" style={SYSTEM_SURFACE_STYLE}>
                 <CCardBody>
                   <h6 className="mb-3">Источник</h6>
                   <DetailItem label="IP" value={renderMetaValue(meta.ip)} />
