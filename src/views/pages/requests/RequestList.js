@@ -120,6 +120,18 @@ const resolveLocaleStyle = (locale) => {
   return LOCALE_COLORS[normalizedLocale] || null
 }
 
+const renderValue = (value) => {
+  if (value === null || value === undefined || value === '') return '—'
+  return value
+}
+
+const DetailItem = ({ label, value }) => (
+  <div className="d-flex justify-content-between gap-3 py-1 border-bottom">
+    <span className="text-medium-emphasis">{label}</span>
+    <span className="text-end">{renderValue(value)}</span>
+  </div>
+)
+
 const RequestList = () => {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
@@ -454,49 +466,96 @@ const RequestList = () => {
         </CModalHeader>
         <CModalBody>
           {selectedRequest && (
-            <div className="d-flex flex-column gap-2">
-              <p className="mb-0"><strong>Тип:</strong> {TYPE_LABELS[selectedRequest.type] || selectedRequest.type}</p>
-              <p className="mb-0"><strong>Статус:</strong> {STATUS_LABELS[selectedRequest.status] || selectedRequest.status || 'Новая'}</p>
-              <p className="mb-0"><strong>Создано:</strong> {formatDate(selectedRequest.createdAt)}</p>
-              <p className="mb-0"><strong>Язык:</strong> {selectedRequest.locale || '—'}</p>
-              <p className="mb-0"><strong>Имя:</strong> {selectedRequest.name || '—'}</p>
-              <p className="mb-0"><strong>Телефон:</strong> {selectedRequest.phone || '—'}</p>
-              <p className="mb-0"><strong>Email:</strong> {selectedRequest.email || '—'}</p>
-              <p className="mb-0"><strong>Адрес:</strong> {selectedRequest.address || '—'}</p>
-              <p className="mb-0"><strong>Регион:</strong> {selectedRequest.region || '—'}</p>
-              <p className="mb-0"><strong>Пригород:</strong> {selectedRequest.suburb || '—'}</p>
-              <p className="mb-0"><strong>Компания:</strong> {selectedRequest.companyName || '—'}</p>
-              <p className="mb-0"><strong>Услуга:</strong> {selectedRequest.serviceName || '—'}</p>
-              <p className="mb-0"><strong>Зона доставки:</strong> {selectedRequest.deliveryZone || '—'}</p>
-              <p className="mb-0"><strong>Комментарий:</strong> {selectedRequest.comment || '—'}</p>
-              <p className="mb-0"><strong>Сумма товаров:</strong> {formatMoney(selectedRequest.itemsAmount)}</p>
-              <p className="mb-0"><strong>Доставка:</strong> {formatMoney(selectedRequest.deliveryPrice)}</p>
-              <p className="mb-0"><strong>Итого:</strong> {formatMoney(selectedRequest.totalAmount)}</p>
+            <div className="d-flex flex-column gap-3">
+              <div className="d-flex flex-wrap align-items-center gap-2">
+                <CBadge color={TYPE_COLORS[selectedRequest.type] || 'secondary'}>
+                  {TYPE_LABELS[selectedRequest.type] || selectedRequest.type}
+                </CBadge>
+                <CBadge color={STATUS_COLORS[selectedRequest.status] || 'secondary'}>
+                  {STATUS_LABELS[selectedRequest.status] || selectedRequest.status || 'Новая'}
+                </CBadge>
+                <CBadge color="light">Язык: {(selectedRequest.locale || '—').toUpperCase()}</CBadge>
+                <span className="small text-medium-emphasis">Создано: {formatDate(selectedRequest.createdAt)}</span>
+              </div>
+
+              <CRow className="g-3">
+                <CCol xs={12} md={6}>
+                  <CCard className="h-100 border-0 bg-light">
+                    <CCardBody>
+                      <h6 className="mb-3">Клиент</h6>
+                      <DetailItem label="Имя" value={selectedRequest.name} />
+                      <DetailItem label="Телефон" value={selectedRequest.phone} />
+                      <DetailItem label="Email" value={selectedRequest.email} />
+                      <DetailItem label="Компания" value={selectedRequest.companyName} />
+                      <DetailItem label="Регион" value={selectedRequest.region} />
+                      <DetailItem label="Пригород" value={selectedRequest.suburb} />
+                      <DetailItem label="Адрес" value={selectedRequest.address} />
+                      <DetailItem label="Зона доставки" value={selectedRequest.deliveryZone} />
+                      <DetailItem label="Комментарий" value={selectedRequest.comment} />
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+
+                <CCol xs={12} md={6}>
+                  <CCard className="h-100 border-0 bg-light">
+                    <CCardBody>
+                      <h6 className="mb-3">Заявка</h6>
+                      <DetailItem label="ID" value={selectedRequest.id} />
+                      <DetailItem label="Услуга" value={selectedRequest.serviceName} />
+                      <DetailItem label="Кол-во товаров" value={selectedRequest.productsCount ?? 0} />
+                      <DetailItem label="Сумма товаров" value={formatMoney(selectedRequest.itemsAmount)} />
+                      <DetailItem label="Доставка" value={formatMoney(selectedRequest.deliveryPrice)} />
+                      <DetailItem label="Итого" value={formatMoney(selectedRequest.totalAmount)} />
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+              </CRow>
 
               {Array.isArray(selectedRequest.products) && selectedRequest.products.length > 0 && (
-                <div className="mt-2">
-                  <strong>Товары:</strong>
-                  <ul className="mt-2 mb-0">
-                    {selectedRequest.products.map((product, index) => (
-                      <li key={`${selectedRequest.id}-${index}`}>
-                        {product.name} — {product.qty} x {formatMoney(product.price)} = {formatMoney(product.totalPrice)}
-                        {product.productUrl && (
-                          <>
-                            {' '}
-                            <a href={product.productUrl} target="_blank" rel="noreferrer">
-                              Открыть товар
-                            </a>
-                          </>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <CCard className="border-0 bg-light">
+                  <CCardBody>
+                    <h6 className="mb-3">Товары</h6>
+                    <CTable responsive small align="middle" className="mb-0">
+                      <CTableHead>
+                        <CTableRow>
+                          <CTableHeaderCell>Товар</CTableHeaderCell>
+                          <CTableHeaderCell className="text-center">Кол-во</CTableHeaderCell>
+                          <CTableHeaderCell className="text-end">Цена</CTableHeaderCell>
+                          <CTableHeaderCell className="text-end">Сумма</CTableHeaderCell>
+                          <CTableHeaderCell className="text-end">Ссылка</CTableHeaderCell>
+                        </CTableRow>
+                      </CTableHead>
+                      <CTableBody>
+                        {selectedRequest.products.map((product, index) => (
+                          <CTableRow key={`${selectedRequest.id}-${index}`}>
+                            <CTableDataCell>{product.name}</CTableDataCell>
+                            <CTableDataCell className="text-center">{product.qty}</CTableDataCell>
+                            <CTableDataCell className="text-end">{formatMoney(product.price)}</CTableDataCell>
+                            <CTableDataCell className="text-end">{formatMoney(product.totalPrice)}</CTableDataCell>
+                            <CTableDataCell className="text-end">
+                              {product.productUrl ? (
+                                <a href={product.productUrl} target="_blank" rel="noreferrer">
+                                  Открыть
+                                </a>
+                              ) : (
+                                '—'
+                              )}
+                            </CTableDataCell>
+                          </CTableRow>
+                        ))}
+                      </CTableBody>
+                    </CTable>
+                  </CCardBody>
+                </CCard>
               )}
 
-              <hr />
-              <p className="mb-0"><strong>IP:</strong> {renderMetaValue(meta.ip)}</p>
-              <p className="mb-0"><strong>Локация:</strong> {resolveLocation(meta)}</p>
+              <CCard className="border-0 bg-light">
+                <CCardBody>
+                  <h6 className="mb-3">Источник</h6>
+                  <DetailItem label="IP" value={renderMetaValue(meta.ip)} />
+                  <DetailItem label="Локация" value={resolveLocation(meta)} />
+                </CCardBody>
+              </CCard>
             </div>
           )}
         </CModalBody>
