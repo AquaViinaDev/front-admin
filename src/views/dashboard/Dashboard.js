@@ -1,17 +1,16 @@
-import React from 'react'
-import classNames from 'classnames'
-
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  CAvatar,
+  CAlert,
+  CBadge,
   CButton,
   CButtonGroup,
   CCard,
   CCardBody,
-  CCardFooter,
   CCardHeader,
   CCol,
   CProgress,
   CRow,
+  CSpinner,
   CTable,
   CTableBody,
   CTableDataCell,
@@ -19,367 +18,345 @@ import {
   CTableHeaderCell,
   CTableRow,
 } from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import {
-  cibCcAmex,
-  cibCcApplePay,
-  cibCcMastercard,
-  cibCcPaypal,
-  cibCcStripe,
-  cibCcVisa,
-  cibGoogle,
-  cibFacebook,
-  cibLinkedin,
-  cifBr,
-  cifEs,
-  cifFr,
-  cifIn,
-  cifPl,
-  cifUs,
-  cibTwitter,
-  cilCloudDownload,
-  cilPeople,
-  cilUser,
-  cilUserFemale,
-} from '@coreui/icons'
+import { getRequestStats } from 'src/api/requestApi'
 
-// import avatar1 from 'src/assets/images/avatars/1.jpg'
-// import avatar2 from 'src/assets/images/avatars/2.jpg'
-// import avatar3 from 'src/assets/images/avatars/3.jpg'
-// import avatar4 from 'src/assets/images/avatars/4.jpg'
-// import avatar5 from 'src/assets/images/avatars/5.jpg'
-// import avatar6 from 'src/assets/images/avatars/6.jpg'
+const PERIOD_OPTIONS = [
+  { value: 1, label: '1 месяц' },
+  { value: 3, label: '3 месяца' },
+  { value: 6, label: '6 месяцев' },
+  { value: 12, label: '12 месяцев' },
+]
 
-import WidgetsBrand from '../widgets/WidgetsBrand'
-import WidgetsDropdown from '../widgets/WidgetsDropdown'
-import MainChart from './MainChart'
+const TYPE_LABELS = {
+  order: 'Заказы',
+  consultation: 'Консультации',
+  service: 'Услуги',
+}
+
+const TYPE_COLORS = {
+  order: 'primary',
+  consultation: 'warning',
+  service: 'info',
+}
+
+const formatDateTime = (value) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleString('ru-RU')
+}
+
+const formatMoney = (value) => {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return '0 лей'
+  return `${numeric.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} лей`
+}
+
+const MetricCard = ({ title, value, hint, color = 'secondary' }) => (
+  <CCard className="h-100 border-start border-start-4" style={{ borderLeftColor: `var(--cui-${color})` }}>
+    <CCardBody>
+      <div className="text-medium-emphasis small">{title}</div>
+      <div className="fs-4 fw-semibold">{value}</div>
+      <div className="small text-medium-emphasis">{hint}</div>
+    </CCardBody>
+  </CCard>
+)
+
+const buildRecommendations = ({ metrics, byRegion, byType, periodLabel }) => {
+  const recommendations = []
+
+  if (metrics.totalOrders === 0) {
+    recommendations.push(`За ${periodLabel} нет заказов: проверьте формы, рекламу и каналы трафика.`)
+    return recommendations
+  }
+
+  if (metrics.processedRate < 60) {
+    recommendations.push(
+      `Низкая обработка (${metrics.processedRate}%): ускорьте первый контакт и сделайте SLA обработки до 15 минут.`,
+    )
+  } else {
+    recommendations.push(
+      `Хорошая обработка (${metrics.processedRate}%): можно масштабировать трафик без потери качества продаж.`,
+    )
+  }
+
+  const topRegion = byRegion[0]
+  if (topRegion) {
+    if (topRegion.share >= 40) {
+      recommendations.push(
+        `${topRegion.region} дает ${topRegion.share}% заказов: запускайте отдельные офферы и бюджет именно под этот регион.`,
+      )
+    } else {
+      recommendations.push(
+        `Спрос распределен по регионам равномерно: тестируйте локальные креативы и доставку в топ-3 регионах.`,
+      )
+    }
+  }
+
+  const consultations = byType.find((row) => row.type === 'consultation')
+  const consultationsShare = consultations?.share ?? 0
+  if (consultationsShare >= 25) {
+    recommendations.push(
+      `Доля консультаций ${consultationsShare}%: добавьте скрипт перевода консультации в заказ и контроль конверсии менеджера.`,
+    )
+  }
+
+  if (metrics.avgCheck > 0) {
+    recommendations.push(
+      `Средний чек ${formatMoney(metrics.avgCheck)}: добавьте апселл в корзине и в звонке (фильтры, сервис, расходники).`,
+    )
+  }
+
+  return recommendations.slice(0, 5)
+}
 
 const Dashboard = () => {
-  const progressExample = [
-    { title: 'Visits', value: '29.703 Users', percent: 40, color: 'success' },
-    { title: 'Unique', value: '24.093 Users', percent: 20, color: 'info' },
-    { title: 'Pageviews', value: '78.706 Views', percent: 60, color: 'warning' },
-    { title: 'New Users', value: '22.123 Users', percent: 80, color: 'danger' },
-    { title: 'Bounce Rate', value: 'Average Rate', percent: 40.15, color: 'primary' },
-  ]
+  const [months, setMonths] = useState(3)
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState(null)
+  const [error, setError] = useState('')
 
-  const progressGroupExample1 = [
-    { title: 'Monday', value1: 34, value2: 78 },
-    { title: 'Tuesday', value1: 56, value2: 94 },
-    { title: 'Wednesday', value1: 12, value2: 67 },
-    { title: 'Thursday', value1: 43, value2: 91 },
-    { title: 'Friday', value1: 22, value2: 73 },
-    { title: 'Saturday', value1: 53, value2: 82 },
-    { title: 'Sunday', value1: 9, value2: 69 },
-  ]
+  const loadStats = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const data = await getRequestStats({ months, limitRegions: 12 })
+      setStats(data)
+    } catch (loadError) {
+      console.error(loadError)
+      setError('Не удалось загрузить статистику заявок')
+    } finally {
+      setLoading(false)
+    }
+  }, [months])
 
-  const progressGroupExample2 = [
-    { title: 'Male', icon: cilUser, value: 53 },
-    { title: 'Female', icon: cilUserFemale, value: 43 },
-  ]
+  useEffect(() => {
+    loadStats()
+  }, [loadStats])
 
-  const progressGroupExample3 = [
-    { title: 'Organic Search', icon: cibGoogle, percent: 56, value: '191,235' },
-    { title: 'Facebook', icon: cibFacebook, percent: 15, value: '51,223' },
-    { title: 'Twitter', icon: cibTwitter, percent: 11, value: '37,564' },
-    { title: 'LinkedIn', icon: cibLinkedin, percent: 8, value: '27,319' },
-  ]
+  const periodLabel = useMemo(() => {
+    return PERIOD_OPTIONS.find((option) => option.value === months)?.label || `${months} мес.`
+  }, [months])
 
-  // const tableExample = [
-  //   {
-  //     avatar: { src: avatar1, status: 'success' },
-  //     user: {
-  //       name: 'Yiorgos Avraamu',
-  //       new: true,
-  //       registered: 'Jan 1, 2023',
-  //     },
-  //     country: { name: 'USA', flag: cifUs },
-  //     usage: {
-  //       value: 50,
-  //       period: 'Jun 11, 2023 - Jul 10, 2023',
-  //       color: 'success',
-  //     },
-  //     payment: { name: 'Mastercard', icon: cibCcMastercard },
-  //     activity: '10 sec ago',
-  //   },
-  //   {
-  //     avatar: { src: avatar2, status: 'danger' },
-  //     user: {
-  //       name: 'Avram Tarasios',
-  //       new: false,
-  //       registered: 'Jan 1, 2023',
-  //     },
-  //     country: { name: 'Brazil', flag: cifBr },
-  //     usage: {
-  //       value: 22,
-  //       period: 'Jun 11, 2023 - Jul 10, 2023',
-  //       color: 'info',
-  //     },
-  //     payment: { name: 'Visa', icon: cibCcVisa },
-  //     activity: '5 minutes ago',
-  //   },
-  //   {
-  //     avatar: { src: avatar3, status: 'warning' },
-  //     user: { name: 'Quintin Ed', new: true, registered: 'Jan 1, 2023' },
-  //     country: { name: 'India', flag: cifIn },
-  //     usage: {
-  //       value: 74,
-  //       period: 'Jun 11, 2023 - Jul 10, 2023',
-  //       color: 'warning',
-  //     },
-  //     payment: { name: 'Stripe', icon: cibCcStripe },
-  //     activity: '1 hour ago',
-  //   },
-  //   {
-  //     avatar: { src: avatar4, status: 'secondary' },
-  //     user: { name: 'Enéas Kwadwo', new: true, registered: 'Jan 1, 2023' },
-  //     country: { name: 'France', flag: cifFr },
-  //     usage: {
-  //       value: 98,
-  //       period: 'Jun 11, 2023 - Jul 10, 2023',
-  //       color: 'danger',
-  //     },
-  //     payment: { name: 'PayPal', icon: cibCcPaypal },
-  //     activity: 'Last month',
-  //   },
-  //   {
-  //     avatar: { src: avatar5, status: 'success' },
-  //     user: {
-  //       name: 'Agapetus Tadeáš',
-  //       new: true,
-  //       registered: 'Jan 1, 2023',
-  //     },
-  //     country: { name: 'Spain', flag: cifEs },
-  //     usage: {
-  //       value: 22,
-  //       period: 'Jun 11, 2023 - Jul 10, 2023',
-  //       color: 'primary',
-  //     },
-  //     payment: { name: 'Google Wallet', icon: cibCcApplePay },
-  //     activity: 'Last week',
-  //   },
-  //   {
-  //     avatar: { src: avatar6, status: 'danger' },
-  //     user: {
-  //       name: 'Friderik Dávid',
-  //       new: true,
-  //       registered: 'Jan 1, 2023',
-  //     },
-  //     country: { name: 'Poland', flag: cifPl },
-  //     usage: {
-  //       value: 43,
-  //       period: 'Jun 11, 2023 - Jul 10, 2023',
-  //       color: 'success',
-  //     },
-  //     payment: { name: 'Amex', icon: cibCcAmex },
-  //     activity: 'Last week',
-  //   },
-  // ]
+  const metrics = stats?.metrics || {
+    totalRequests: 0,
+    totalOrders: 0,
+    processedOrders: 0,
+    newOrders: 0,
+    processedRate: 0,
+    totalAmount: 0,
+    avgCheck: 0,
+  }
+
+  const byRegion = Array.isArray(stats?.byRegion) ? stats.byRegion : []
+  const byType = Array.isArray(stats?.byType) ? stats.byType : []
+
+  const recommendations = useMemo(
+    () => buildRecommendations({ metrics, byRegion, byType, periodLabel }),
+    [metrics, byRegion, byType, periodLabel],
+  )
 
   return (
     <>
-      <WidgetsDropdown className="mb-4" />
       <CCard className="mb-4">
+        <CCardHeader className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <strong>Аналитика заявок и заказов</strong>
+            <div className="small text-medium-emphasis">
+              Период: {stats?.period?.from ? formatDateTime(stats.period.from) : '—'} -{' '}
+              {stats?.period?.to ? formatDateTime(stats.period.to) : '—'}
+            </div>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <CButtonGroup>
+              {PERIOD_OPTIONS.map((option) => (
+                <CButton
+                  key={option.value}
+                  color="secondary"
+                  variant={months === option.value ? undefined : 'outline'}
+                  onClick={() => setMonths(option.value)}
+                >
+                  {option.label}
+                </CButton>
+              ))}
+            </CButtonGroup>
+            <CButton color="secondary" variant="outline" onClick={loadStats}>
+              Обновить
+            </CButton>
+          </div>
+        </CCardHeader>
         <CCardBody>
-          <CRow>
-            <CCol sm={5}>
-              <h4 id="traffic" className="card-title mb-0">
-                Traffic
-              </h4>
-              <div className="small text-body-secondary">January - July 2023</div>
-            </CCol>
-            <CCol sm={7} className="d-none d-md-block">
-              <CButton color="primary" className="float-end">
-                <CIcon icon={cilCloudDownload} />
-              </CButton>
-              <CButtonGroup className="float-end me-3">
-                {['Day', 'Month', 'Year'].map((value) => (
-                  <CButton
-                    color="outline-secondary"
-                    key={value}
-                    className="mx-0"
-                    active={value === 'Month'}
-                  >
-                    {value}
-                  </CButton>
-                ))}
-              </CButtonGroup>
-            </CCol>
-          </CRow>
-          <MainChart />
-        </CCardBody>
-        <CCardFooter>
-          <CRow
-            xs={{ cols: 1, gutter: 4 }}
-            sm={{ cols: 2 }}
-            lg={{ cols: 4 }}
-            xl={{ cols: 5 }}
-            className="mb-2 text-center"
-          >
-            {progressExample.map((item, index, items) => (
-              <CCol
-                className={classNames({
-                  'd-none d-xl-block': index + 1 === items.length,
-                })}
-                key={index}
-              >
-                <div className="text-body-secondary">{item.title}</div>
-                <div className="fw-semibold text-truncate">
-                  {item.value} ({item.percent}%)
-                </div>
-                <CProgress thin className="mt-2" color={item.color} value={item.percent} />
-              </CCol>
-            ))}
-          </CRow>
-        </CCardFooter>
-      </CCard>
-      <WidgetsBrand className="mb-4" withCharts />
-      <CRow>
-        <CCol xs>
-          <CCard className="mb-4">
-            <CCardHeader>Traffic {' & '} Sales</CCardHeader>
-            <CCardBody>
-              <CRow>
-                <CCol xs={12} md={6} xl={6}>
-                  <CRow>
-                    <CCol xs={6}>
-                      <div className="border-start border-start-4 border-start-info py-1 px-3">
-                        <div className="text-body-secondary text-truncate small">New Clients</div>
-                        <div className="fs-5 fw-semibold">9,123</div>
-                      </div>
-                    </CCol>
-                    <CCol xs={6}>
-                      <div className="border-start border-start-4 border-start-danger py-1 px-3 mb-3">
-                        <div className="text-body-secondary text-truncate small">
-                          Recurring Clients
-                        </div>
-                        <div className="fs-5 fw-semibold">22,643</div>
-                      </div>
-                    </CCol>
-                  </CRow>
-                  <hr className="mt-0" />
-                  {progressGroupExample1.map((item, index) => (
-                    <div className="progress-group mb-4" key={index}>
-                      <div className="progress-group-prepend">
-                        <span className="text-body-secondary small">{item.title}</span>
-                      </div>
-                      <div className="progress-group-bars">
-                        <CProgress thin color="info" value={item.value1} />
-                        <CProgress thin color="danger" value={item.value2} />
-                      </div>
-                    </div>
-                  ))}
+          {error && (
+            <CAlert color="danger" className="mb-3">
+              {error}
+            </CAlert>
+          )}
+
+          {loading ? (
+            <div className="py-4">
+              <CSpinner color="primary" />
+            </div>
+          ) : (
+            <>
+              <CRow className="g-3 mb-3">
+                <CCol xs={12} sm={6} lg={3}>
+                  <MetricCard
+                    title="Всего заявок"
+                    value={metrics.totalRequests.toLocaleString('ru-RU')}
+                    hint={`за ${periodLabel}`}
+                    color="info"
+                  />
                 </CCol>
-                <CCol xs={12} md={6} xl={6}>
-                  <CRow>
-                    <CCol xs={6}>
-                      <div className="border-start border-start-4 border-start-warning py-1 px-3 mb-3">
-                        <div className="text-body-secondary text-truncate small">Pageviews</div>
-                        <div className="fs-5 fw-semibold">78,623</div>
-                      </div>
-                    </CCol>
-                    <CCol xs={6}>
-                      <div className="border-start border-start-4 border-start-success py-1 px-3 mb-3">
-                        <div className="text-body-secondary text-truncate small">Organic</div>
-                        <div className="fs-5 fw-semibold">49,123</div>
-                      </div>
-                    </CCol>
-                  </CRow>
-
-                  <hr className="mt-0" />
-
-                  {progressGroupExample2.map((item, index) => (
-                    <div className="progress-group mb-4" key={index}>
-                      <div className="progress-group-header">
-                        <CIcon className="me-2" icon={item.icon} size="lg" />
-                        <span>{item.title}</span>
-                        <span className="ms-auto fw-semibold">{item.value}%</span>
-                      </div>
-                      <div className="progress-group-bars">
-                        <CProgress thin color="warning" value={item.value} />
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="mb-5"></div>
-
-                  {progressGroupExample3.map((item, index) => (
-                    <div className="progress-group" key={index}>
-                      <div className="progress-group-header">
-                        <CIcon className="me-2" icon={item.icon} size="lg" />
-                        <span>{item.title}</span>
-                        <span className="ms-auto fw-semibold">
-                          {item.value}{' '}
-                          <span className="text-body-secondary small">({item.percent}%)</span>
-                        </span>
-                      </div>
-                      <div className="progress-group-bars">
-                        <CProgress thin color="success" value={item.percent} />
-                      </div>
-                    </div>
-                  ))}
+                <CCol xs={12} sm={6} lg={3}>
+                  <MetricCard
+                    title="Заказы"
+                    value={metrics.totalOrders.toLocaleString('ru-RU')}
+                    hint="тип order"
+                    color="primary"
+                  />
+                </CCol>
+                <CCol xs={12} sm={6} lg={3}>
+                  <MetricCard
+                    title="Обработано"
+                    value={metrics.processedOrders.toLocaleString('ru-RU')}
+                    hint={`${metrics.processedRate}% от заказов`}
+                    color="success"
+                  />
+                </CCol>
+                <CCol xs={12} sm={6} lg={3}>
+                  <MetricCard
+                    title="Новые (необработ.)"
+                    value={metrics.newOrders.toLocaleString('ru-RU')}
+                    hint="текущий backlog"
+                    color="warning"
+                  />
+                </CCol>
+                <CCol xs={12} sm={6} lg={6}>
+                  <MetricCard
+                    title="Сумма заказов"
+                    value={formatMoney(metrics.totalAmount)}
+                    hint={`за ${periodLabel}`}
+                    color="danger"
+                  />
+                </CCol>
+                <CCol xs={12} sm={6} lg={6}>
+                  <MetricCard
+                    title="Средний чек"
+                    value={formatMoney(metrics.avgCheck)}
+                    hint="среднее по заказам"
+                    color="secondary"
+                  />
                 </CCol>
               </CRow>
 
-              <br />
+              <CRow className="g-3 mb-3">
+                <CCol xs={12} lg={6}>
+                  <CCard className="h-100">
+                    <CCardHeader>Воронка обработки заказов</CCardHeader>
+                    <CCardBody>
+                      <div className="mb-3">
+                        <div className="d-flex justify-content-between small mb-1">
+                          <span>Обработано</span>
+                          <span>{metrics.processedRate}%</span>
+                        </div>
+                        <CProgress value={metrics.processedRate} color="success" />
+                      </div>
+                      <div>
+                        <div className="d-flex justify-content-between small mb-1">
+                          <span>Не обработано</span>
+                          <span>{Math.max(0, 100 - metrics.processedRate).toFixed(2)}%</span>
+                        </div>
+                        <CProgress value={Math.max(0, 100 - metrics.processedRate)} color="warning" />
+                      </div>
+                    </CCardBody>
+                  </CCard>
+                </CCol>
 
-              <CTable align="middle" className="mb-0 border" hover responsive>
-                <CTableHead className="text-nowrap">
-                  <CTableRow>
-                    <CTableHeaderCell className="bg-body-tertiary text-center">
-                      <CIcon icon={cilPeople} />
-                    </CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary">User</CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary text-center">
-                      Country
-                    </CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary">Usage</CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary text-center">
-                      Payment Method
-                    </CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary">Activity</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                {/*<CTableBody>*/}
-                {/*  {tableExample.map((item, index) => (*/}
-                {/*    <CTableRow v-for="item in tableItems" key={index}>*/}
-                {/*      <CTableDataCell className="text-center">*/}
-                {/*        <CAvatar size="md" src={item.avatar.src} status={item.avatar.status} />*/}
-                {/*      </CTableDataCell>*/}
-                {/*      <CTableDataCell>*/}
-                {/*        <div>{item.user.name}</div>*/}
-                {/*        <div className="small text-body-secondary text-nowrap">*/}
-                {/*          <span>{item.user.new ? 'New' : 'Recurring'}</span> | Registered:{' '}*/}
-                {/*          {item.user.registered}*/}
-                {/*        </div>*/}
-                {/*      </CTableDataCell>*/}
-                {/*      <CTableDataCell className="text-center">*/}
-                {/*        <CIcon size="xl" icon={item.country.flag} title={item.country.name} />*/}
-                {/*      </CTableDataCell>*/}
-                {/*      <CTableDataCell>*/}
-                {/*        <div className="d-flex justify-content-between text-nowrap">*/}
-                {/*          <div className="fw-semibold">{item.usage.value}%</div>*/}
-                {/*          <div className="ms-3">*/}
-                {/*            <small className="text-body-secondary">{item.usage.period}</small>*/}
-                {/*          </div>*/}
-                {/*        </div>*/}
-                {/*        <CProgress thin color={item.usage.color} value={item.usage.value} />*/}
-                {/*      </CTableDataCell>*/}
-                {/*      <CTableDataCell className="text-center">*/}
-                {/*        <CIcon size="xl" icon={item.payment.icon} />*/}
-                {/*      </CTableDataCell>*/}
-                {/*      <CTableDataCell>*/}
-                {/*        <div className="small text-body-secondary text-nowrap">Last login</div>*/}
-                {/*        <div className="fw-semibold text-nowrap">{item.activity}</div>*/}
-                {/*      </CTableDataCell>*/}
-                {/*    </CTableRow>*/}
-                {/*  ))}*/}
-                {/*</CTableBody>*/}
-              </CTable>
-            </CCardBody>
-          </CCard>
-        </CCol>
-      </CRow>
+                <CCol xs={12} lg={6}>
+                  <CCard className="h-100">
+                    <CCardHeader>Структура входящих заявок</CCardHeader>
+                    <CCardBody>
+                      {byType.length === 0 ? (
+                        <div className="text-medium-emphasis">Нет данных</div>
+                      ) : (
+                        byType.map((item) => (
+                          <div key={item.type} className="mb-3">
+                            <div className="d-flex justify-content-between small mb-1">
+                              <span>
+                                <CBadge color={TYPE_COLORS[item.type] || 'secondary'} className="me-2">
+                                  {TYPE_LABELS[item.type] || item.type}
+                                </CBadge>
+                              </span>
+                              <span>
+                                {item.count} ({item.share}%)
+                              </span>
+                            </div>
+                            <CProgress value={item.share} color={TYPE_COLORS[item.type] || 'secondary'} />
+                          </div>
+                        ))
+                      )}
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+              </CRow>
+
+              <CCard className="mb-3">
+                <CCardHeader>Регионы: откуда приходят заказы</CCardHeader>
+                <CCardBody>
+                  <CTable hover responsive>
+                    <CTableHead>
+                      <CTableRow>
+                        <CTableHeaderCell>Регион</CTableHeaderCell>
+                        <CTableHeaderCell className="text-end">Заказов</CTableHeaderCell>
+                        <CTableHeaderCell className="text-end">Доля</CTableHeaderCell>
+                        <CTableHeaderCell className="text-end">Обработано</CTableHeaderCell>
+                        <CTableHeaderCell className="text-end">Сумма</CTableHeaderCell>
+                        <CTableHeaderCell className="text-end">Средний чек</CTableHeaderCell>
+                      </CTableRow>
+                    </CTableHead>
+                    <CTableBody>
+                      {byRegion.map((region) => (
+                        <CTableRow key={region.region}>
+                          <CTableDataCell>{region.region}</CTableDataCell>
+                          <CTableDataCell className="text-end">{region.orders}</CTableDataCell>
+                          <CTableDataCell className="text-end">{region.share}%</CTableDataCell>
+                          <CTableDataCell className="text-end">{region.processedRate}%</CTableDataCell>
+                          <CTableDataCell className="text-end">{formatMoney(region.totalAmount)}</CTableDataCell>
+                          <CTableDataCell className="text-end">{formatMoney(region.avgCheck)}</CTableDataCell>
+                        </CTableRow>
+                      ))}
+                      {byRegion.length === 0 && (
+                        <CTableRow>
+                          <CTableDataCell colSpan={6} className="text-center text-medium-emphasis">
+                            Нет данных по регионам за выбранный период
+                          </CTableDataCell>
+                        </CTableRow>
+                      )}
+                    </CTableBody>
+                  </CTable>
+                </CCardBody>
+              </CCard>
+
+              <CCard>
+                <CCardHeader>Что поможет росту бизнеса</CCardHeader>
+                <CCardBody>
+                  {recommendations.length === 0 ? (
+                    <div className="text-medium-emphasis">Недостаточно данных для рекомендаций</div>
+                  ) : (
+                    <ol className="mb-0 ps-3">
+                      {recommendations.map((text, index) => (
+                        <li key={`${index}-${text}`} className="mb-2">
+                          {text}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </CCardBody>
+              </CCard>
+            </>
+          )}
+        </CCardBody>
+      </CCard>
     </>
   )
 }

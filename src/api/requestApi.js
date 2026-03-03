@@ -68,3 +68,16 @@ export const deleteRequest = async (id) => {
 
   return response.json()
 }
+
+export const getRequestStats = async ({ months = 1, limitRegions = 10 } = {}) => {
+  const url = new URL(`${API_BASE_URL}/requests/stats`)
+  url.searchParams.set('months', String(months))
+  url.searchParams.set('limitRegions', String(limitRegions))
+
+  const response = await fetch(url.toString())
+  if (!response.ok) {
+    const body = await response.text()
+    throw new Error(`Ошибка при получении статистики заявок: ${response.status} ${body}`)
+  }
+  return response.json()
+}
