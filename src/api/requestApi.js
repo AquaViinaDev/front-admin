@@ -1,11 +1,14 @@
 import { API_BASE_URL } from 'src/config/api'
 
-export const getRequests = async ({ page = 1, limit = 20, type = 'all' } = {}) => {
+export const getRequests = async ({ page = 1, limit = 20, type = 'all', status = 'all' } = {}) => {
   const url = new URL(`${API_BASE_URL}/requests`)
   url.searchParams.set('page', String(page))
   url.searchParams.set('limit', String(limit))
   if (type && type !== 'all') {
     url.searchParams.set('type', type)
+  }
+  if (status && status !== 'all') {
+    url.searchParams.set('status', status)
   }
 
   const response = await fetch(url.toString())

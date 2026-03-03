@@ -11,6 +11,9 @@ import {
   CModalBody,
   CModalHeader,
   CModalTitle,
+  CNav,
+  CNavItem,
+  CNavLink,
   CRow,
   CSpinner,
   CTable,
@@ -44,6 +47,11 @@ const STATUS_COLORS = {
   new: 'secondary',
   processed: 'success',
 }
+
+const STATUS_TABS = [
+  { value: 'new', label: 'Новые' },
+  { value: 'processed', label: 'Обработанные' },
+]
 
 const formatDate = (value) => {
   if (!value) return '—'
@@ -85,6 +93,7 @@ const RequestList = () => {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [typeFilter, setTypeFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('new')
   const [selectedRequest, setSelectedRequest] = useState(null)
   const [statusUpdatingId, setStatusUpdatingId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
@@ -96,6 +105,7 @@ const RequestList = () => {
         page,
         limit: 20,
         type: typeFilter,
+        status: statusFilter,
       })
       setRequests(Array.isArray(data?.items) ? data.items : [])
       setTotalPages(Number(data?.totalPages) > 0 ? Number(data.totalPages) : 1)
@@ -105,7 +115,7 @@ const RequestList = () => {
     } finally {
       setLoading(false)
     }
-  }, [page, typeFilter])
+  }, [page, typeFilter, statusFilter])
 
   useEffect(() => {
     fetchRequests()
@@ -130,6 +140,7 @@ const RequestList = () => {
       setRequests((prev) => prev.map((item) => (item.id === request.id ? updated : item)))
       setSelectedRequest((prev) => (prev?.id === request.id ? updated : prev))
       toast.success(nextStatus === 'processed' ? 'Заявка отмечена как обработанная' : 'Заявка возвращена в новые')
+      fetchRequests()
     } catch (error) {
       console.error(error)
       toast.error('Не удалось обновить статус')
@@ -195,6 +206,24 @@ const RequestList = () => {
                 <CSpinner color="primary" />
               ) : (
                 <>
+                  <CNav variant="tabs" className="mb-3">
+                    {STATUS_TABS.map((tab) => (
+                      <CNavItem key={tab.value}>
+                        <CNavLink
+                          href="#"
+                          active={statusFilter === tab.value}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            if (statusFilter === tab.value) return
+                            setPage(1)
+                            setStatusFilter(tab.value)
+                          }}
+                        >
+                          {tab.label}
+                        </CNavLink>
+                      </CNavItem>
+                    ))}
+                  </CNav>
                   <CTable striped hover responsive>
                     <CTableHead>
                       <CTableRow>
