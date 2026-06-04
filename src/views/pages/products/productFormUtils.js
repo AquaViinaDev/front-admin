@@ -212,18 +212,20 @@ export const buildProductFormData = (
 
   formData.append('inStock', sanitizedProduct.inStock ? 'true' : 'false');
 
-  if (Array.isArray(existingImages) && existingImages.length) {
-    formData.append('existingImages', JSON.stringify(existingImages));
-  }
+  const keptImages = Array.isArray(imagesToKeep)
+    ? imagesToKeep
+    : Array.isArray(existingImages)
+      ? existingImages
+      : [];
 
-  if (Array.isArray(imagesToKeep)) {
-    formData.append('images', JSON.stringify(imagesToKeep));
+  if (keptImages.length > 0) {
+    formData.append('existingImages', JSON.stringify(keptImages));
   }
 
   newImages
-    .filter(Boolean)
+    .filter((file) => file instanceof File)
     .forEach((file) => {
-      formData.append('images', file);
+      formData.append('images', file, file.name || 'image.jpg');
     });
 
   return formData;

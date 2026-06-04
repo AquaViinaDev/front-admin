@@ -1,5 +1,16 @@
 import { API_BASE_URL } from 'src/config/api'
 
+const getAuthHeaders = (extraHeaders = {}) => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    return extraHeaders
+  }
+  return {
+    ...extraHeaders,
+    Authorization: `Bearer ${token}`,
+  }
+}
+
 export const getProducts = async () => {
   const PAGE_SIZE = 100;
 
@@ -91,6 +102,7 @@ export const deleteProduct = async (id) => {
   try {
     const response = await fetch(`${API_BASE_URL}/products/${id}`, {
       method: 'DELETE',
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -108,9 +120,9 @@ export const createProduct = async (formData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/products`, {
       method: 'POST',
+      headers: getAuthHeaders(),
       body: formData,
     });
-    console.log(response)
 
     if (!response.ok) {
       const errText = await response.text();
@@ -136,11 +148,14 @@ export const updateProduct = async (id, data, isFormData = false) => {
   const response = await fetch(`${API_BASE_URL}/products/${id}`, {
     method: 'PUT',
     body: isFormData ? data : JSON.stringify(data),
-    headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(
+      isFormData ? {} : { 'Content-Type': 'application/json' },
+    ),
   });
 
   if (!response.ok) {
-    throw new Error('Ошибка при обновлении товара')
+    const errText = await response.text();
+    throw new Error(`Ошибка при обновлении товара: ${errText}`);
   }
 
   return await response.json();
