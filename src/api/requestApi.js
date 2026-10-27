@@ -1,5 +1,20 @@
 import { API_BASE_URL } from 'src/config/api'
 
+const getAuthHeaders = (extraHeaders = {}) => {
+  const token = localStorage.getItem('token')
+  return token ? { ...extraHeaders, Authorization: `Bearer ${token}` } : extraHeaders
+}
+
+// Токен истёк или нет — на страницу входа
+const authFetch = async (url, options = {}) => {
+  const response = await fetch(url, { ...options, headers: getAuthHeaders(options.headers) })
+  if (response.status === 401) {
+    localStorage.removeItem('token')
+    window.location.reload()
+  }
+  return response
+}
+
 export const getRequests = async ({
   page = 1,
   limit = 20,
@@ -20,7 +35,7 @@ export const getRequests = async ({
     url.searchParams.set('search', search.trim())
   }
 
-  const response = await fetch(url.toString())
+  const response = await authFetch(url.toString())
 
   if (!response.ok) {
     const body = await response.text()
@@ -31,7 +46,7 @@ export const getRequests = async ({
 }
 
 export const getRequestById = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/requests/${id}`)
+  const response = await authFetch(`${API_BASE_URL}/requests/${id}`)
   if (!response.ok) {
     const body = await response.text()
     throw new Error(`Ошибка при получении заявки: ${response.status} ${body}`)
@@ -40,11 +55,9 @@ export const getRequestById = async (id) => {
 }
 
 export const updateRequestStatus = async (id, status) => {
-  const response = await fetch(`${API_BASE_URL}/requests/${id}/status`, {
+  const response = await authFetch(`${API_BASE_URL}/requests/${id}/status`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
   })
 
@@ -57,7 +70,7 @@ export const updateRequestStatus = async (id, status) => {
 }
 
 export const deleteRequest = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/requests/${id}`, {
+  const response = await authFetch(`${API_BASE_URL}/requests/${id}`, {
     method: 'DELETE',
   })
 
@@ -74,7 +87,7 @@ export const getRequestStats = async ({ months = 1, limitRegions = 10 } = {}) =>
   url.searchParams.set('months', String(months))
   url.searchParams.set('limitRegions', String(limitRegions))
 
-  const response = await fetch(url.toString())
+  const response = await authFetch(url.toString())
   if (!response.ok) {
     const body = await response.text()
     throw new Error(`Ошибка при получении статистики заявок: ${response.status} ${body}`)
