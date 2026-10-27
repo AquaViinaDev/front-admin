@@ -1,0 +1,46 @@
+# Сборка образа для сервера aquaviina.md (фаза 0 «Защита», 27.10.2026).
+# Каждый коммит в master → образы в ghcr.io: <окружение>-<коммит> и <окружение>-latest.
+# Сервер их только скачивает (deploy.sh в aquaviina-deployment), сам не собирает.
+name: image
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - env: prod
+            base: https://aquaviina.md
+          - env: test
+            base: https://test.aquaviina.md
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: short sha
+        run: echo "SHA=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=${{ matrix.base }}/api
+          tags: |
+            ghcr.io/aquaviinadev/front-admin:${{ matrix.env }}-${{ env.SHA }}
+            ghcr.io/aquaviinadev/front-admin:${{ matrix.env }}-latest
+          cache-from: type=gha,scope=${{ matrix.env }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.env }}
